@@ -624,7 +624,7 @@ async function handleRoute(request, { params }) {
       }
 
       const body = await request.json()
-      const allowedFields = ['name', 'roadName', 'phone', 'bike', 'chapter']
+      const allowedFields = ['name', 'roadName', 'phone', 'bike', 'chapter', 'rpSheetUrl', 'totalKilometers']
       const updateData = {}
       
       for (const field of allowedFields) {
