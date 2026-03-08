@@ -1,5 +1,5 @@
 const nextConfig = {
-  output: 'standalone',
+  // output: 'standalone', // Disabled for compatibility with next start
   images: {
     unoptimized: true,
   },
