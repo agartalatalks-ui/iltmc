@@ -800,6 +800,163 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(cleanedUploads))
     }
 
+    // Member upload profile picture
+    if (route === '/member/profile-picture' && method === 'POST') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { imageData } = await request.json()
+      if (!imageData) {
+        return handleCORS(NextResponse.json({ error: 'Image data required' }, { status: 400 }))
+      }
+
+      await db.collection('members').updateOne(
+        { accountId: user.id },
+        { $set: { profilePicture: imageData, updatedAt: new Date() } }
+      )
+
+      return handleCORS(NextResponse.json({ message: 'Profile picture updated', profilePicture: imageData }))
+    }
+
+    // Member update kilometers
+    if (route === '/member/kilometers' && method === 'PUT') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { totalKilometers } = await request.json()
+      if (totalKilometers === undefined || isNaN(totalKilometers)) {
+        return handleCORS(NextResponse.json({ error: 'Valid kilometers required' }, { status: 400 }))
+      }
+
+      await db.collection('members').updateOne(
+        { accountId: user.id },
+        { $set: { totalKilometers: parseInt(totalKilometers), updatedAt: new Date() } }
+      )
+
+      return handleCORS(NextResponse.json({ message: 'Kilometers updated', totalKilometers: parseInt(totalKilometers) }))
+    }
+
+    // Member self-attendance - GET
+    if (route === '/member/self-attendance' && method === 'GET') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const memberProfile = await db.collection('members').findOne({ accountId: user.id })
+      const records = await db.collection('self_attendance')
+        .find({ memberId: memberProfile?.id || user.id })
+        .sort({ date: -1 })
+        .toArray()
+
+      const cleanedRecords = records.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleanedRecords))
+    }
+
+    // Member self-attendance - POST
+    if (route === '/member/self-attendance' && method === 'POST') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { type, date, description, kilometers } = await request.json()
+      if (!type || !date) {
+        return handleCORS(NextResponse.json({ error: 'Type and date are required' }, { status: 400 }))
+      }
+
+      const memberProfile = await db.collection('members').findOne({ accountId: user.id })
+      
+      const record = {
+        id: uuidv4(),
+        memberId: memberProfile?.id || user.id,
+        memberName: memberProfile?.name || 'Unknown',
+        type, // club_meeting, ride, charity
+        date: new Date(date),
+        description: description || '',
+        kilometers: kilometers ? parseInt(kilometers) : null,
+        status: 'pending', // pending, approved, rejected
+        createdAt: new Date()
+      }
+
+      await db.collection('self_attendance').insertOne(record)
+
+      return handleCORS(NextResponse.json({ message: 'Attendance recorded', record: { ...record, _id: undefined } }))
+    }
+
+    // Member chat - get members list
+    if (route === '/member/chat/members' && method === 'GET') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const members = await db.collection('members')
+        .find({ status: 'active' })
+        .project({ _id: 0, id: 1, name: 1, roadName: 1, rank: 1, profilePicture: 1 })
+        .toArray()
+
+      return handleCORS(NextResponse.json(members))
+    }
+
+    // Member chat - get messages with specific member
+    if (route.startsWith('/member/chat/') && method === 'GET' && path.length === 3) {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const otherMemberId = path[2]
+      const memberProfile = await db.collection('members').findOne({ accountId: user.id })
+      const myId = memberProfile?.id || user.id
+
+      const messages = await db.collection('member_messages')
+        .find({
+          $or: [
+            { senderId: myId, recipientId: otherMemberId },
+            { senderId: otherMemberId, recipientId: myId }
+          ]
+        })
+        .sort({ createdAt: 1 })
+        .limit(100)
+        .toArray()
+
+      const cleanedMessages = messages.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleanedMessages))
+    }
+
+    // Member chat - send message
+    if (route === '/member/chat/send' && method === 'POST') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { recipientId, message } = await request.json()
+      if (!recipientId || !message) {
+        return handleCORS(NextResponse.json({ error: 'Recipient and message required' }, { status: 400 }))
+      }
+
+      const memberProfile = await db.collection('members').findOne({ accountId: user.id })
+      
+      const chatMessage = {
+        id: uuidv4(),
+        senderId: memberProfile?.id || user.id,
+        senderName: memberProfile?.name || 'Unknown',
+        recipientId,
+        message: message.trim(),
+        createdAt: new Date()
+      }
+
+      await db.collection('member_messages').insertOne(chatMessage)
+
+      return handleCORS(NextResponse.json({ message: 'Message sent', chatMessage: { ...chatMessage, _id: undefined } }))
+    }
+
     // Admin get all ride uploads
     if (route === '/admin/ride-uploads' && method === 'GET') {
       const user = await authenticateRequest(request)
