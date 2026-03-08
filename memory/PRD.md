@@ -5,9 +5,20 @@ Full-featured motorcycle club management application for ILTMC - Intrepidus Leon
 
 ## Tech Stack
 - **Frontend**: Next.js 14.2.3 (App Router)
+- **Backend**: FastAPI (API proxy to Next.js)
 - **Database**: MongoDB (local)
 - **UI**: shadcn/ui components, Tailwind CSS
 - **Authentication**: JWT-based auth
+
+## Admin Credentials
+- **Email**: admin@iltmc.com
+- **Password**: admin123
+
+## Download Links
+- Full Package: /downloads/iltmc_full_package.tar.gz
+- Website Only: /downloads/iltmc_website_complete.tar.gz
+- Database Export: /downloads/database_export.tar.gz
+- CloudPanel Guide: /downloads/CLOUDPANEL_DEPLOYMENT_GUIDE.md
 
 ## Core Features Implemented
 - ✅ Home page with hero section, stats, and club info
