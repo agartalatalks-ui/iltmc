@@ -32,6 +32,17 @@ Full-featured motorcycle club management application for ILTMC - Intrepidus Leon
 - ✅ Admin Panel (login, dashboard, member/event/ride/gallery management)
 - ✅ Member Login with security check
 
+## Member Portal Features (March 8, 2026)
+- ✅ **Self Attendance** - Members can record attendance for:
+  - Club Meetings
+  - Rides (with optional kilometer tracking)
+  - Charity Events
+- ✅ **Profile Picture Upload** - Members can upload their own profile picture
+- ✅ **RP Sheet Preview** - Link to Excel RP sheet (manually added URL)
+- ✅ **Member Chat** - Real-time messaging between club members
+- ✅ **Edit Kilometers** - Members can update their total riding distance
+- ✅ **Password Change** - Secure password update functionality
+
 ## Pages
 - `/` - Main landing page
 - `/admin` - Admin panel login & dashboard
