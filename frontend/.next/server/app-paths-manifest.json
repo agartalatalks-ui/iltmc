@@ -3,8 +3,8 @@
   "/api/download/route": "app/api/download/route.js",
   "/admin/page": "app/admin/page.js",
   "/member/page": "app/member/page.js",
-  "/page": "app/page.js",
   "/robots.txt/route": "app/robots.txt/route.js",
+  "/page": "app/page.js",
   "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/api/[[...path]]/route": "app/api/[[...path]]/route.js"
 }
