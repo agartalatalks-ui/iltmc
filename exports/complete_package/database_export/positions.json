@@ -1,7 +1,0 @@
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99d8"},"id":"6bd24f11-3bf0-4954-bc57-a97e4cc64279","name":"President","level":1,"badge":"🦁","description":"Club leader","color":"#fbbf24"}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99d9"},"id":"a5667b4c-1462-4366-87b7-f39de85d1a61","name":"Vice President","level":2,"badge":"👑","description":"Second in command","color":"#ec4899"}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99da"},"id":"eeff1a54-78e8-418a-828c-64fe932f44f7","name":"Secretary","level":3,"badge":"📋","description":"Club records keeper","color":"#3b82f6"}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99db"},"id":"596dfc75-ac36-4a96-82ba-fd5fa5895e42","name":"Vice Secretary","level":4,"badge":"📝","description":"Assistant to Secretary","color":"#6366f1"}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99dc"},"id":"44e6bf55-9f75-4cca-8b2c-9e3eb4d39e1d","name":"Treasurer","level":5,"badge":"💰","description":"Financial manager","color":"#10b981"}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99dd"},"id":"b437b01b-5774-425e-be49-86a847679b11","name":"Road Captain","level":6,"badge":"🛣️","description":"Leads rides and routes","color":"#f59e0b"}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99de"},"id":"5745636d-d9bc-4c87-bd48-a8824f834cb7","name":"Member","level":7,"badge":"⚔️","description":"Club member","color":"#dc2626"}

@@ -1,3 +1,0 @@
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99df"},"id":"987fb950-f921-470c-8601-f66ade24f04d","name":"Agartala","city":"Agartala","state":"Tripura","isMain":true,"createdAt":{"$date":"2026-03-08T10:10:12.649Z"}}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99e0"},"id":"bf6149d8-0c9b-4e84-b9a8-99475819dfb5","name":"Dharmanagar","city":"Dharmanagar","state":"Tripura","isMain":false,"createdAt":{"$date":"2026-03-08T10:10:12.649Z"}}
-{"_id":{"$oid":"69ad4b04495cf3ef4f5e99e1"},"id":"f648da16-ca9d-4c85-8fdd-951e391a2b20","name":"Udaipur","city":"Udaipur","state":"Tripura","isMain":false,"createdAt":{"$date":"2026-03-08T10:10:12.649Z"}}
