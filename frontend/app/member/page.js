@@ -1533,6 +1533,53 @@ function PasswordTab({ token }) {
           </form>
         </CardContent>
       </Card>
+
+      {/* Clear Cache Section */}
+      <Card className="bg-zinc-900/50 border-zinc-800 border-yellow-600/30 max-w-md">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trash2 size={20} className="text-yellow-500" />
+            Clear Cache
+          </CardTitle>
+          <CardDescription>Clear browser cache to fix loading issues</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button 
+            variant="outline" 
+            className="w-full border-zinc-700 hover:bg-zinc-800"
+            onClick={() => {
+              sessionStorage.clear()
+              toast.success('Session cache cleared!')
+            }}
+          >
+            <RefreshCw size={16} className="mr-2" />
+            Clear Session Cache
+          </Button>
+          <Button 
+            variant="outline" 
+            className="w-full border-red-700 text-red-400 hover:bg-red-900/30"
+            onClick={() => {
+              if (confirm('This will log you out and clear all stored data. Continue?')) {
+                localStorage.clear()
+                sessionStorage.clear()
+                if (typeof caches !== 'undefined') {
+                  caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name))
+                  })
+                }
+                toast.success('All cache cleared! Reloading...')
+                setTimeout(() => window.location.reload(), 1000)
+              }
+            }}
+          >
+            <Trash2 size={16} className="mr-2" />
+            Clear All & Reload
+          </Button>
+          <p className="text-xs text-gray-500">
+            💡 If pages load slowly, try &quot;Clear All &amp; Reload&quot;
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
