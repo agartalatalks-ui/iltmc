@@ -997,6 +997,23 @@ function Footer({ content }) {
   )
 }
 
+// Loading Spinner Component
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="text-center">
+        <img src={LOGO_URL} alt="ILTMC" className="w-24 h-24 mx-auto animate-pulse mb-4" />
+        <div className="flex items-center justify-center gap-2">
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+          <div className="w-2 h-2 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+        </div>
+        <p className="text-gray-400 mt-4">Loading ILTMC...</p>
+      </div>
+    </div>
+  )
+}
+
 // Main App
 export default function App() {
   const [stats, setStats] = useState(null)
@@ -1006,17 +1023,33 @@ export default function App() {
   const [ranks, setRanks] = useState([])
   const [positions, setPositions] = useState([])
   const [content, setContent] = useState(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch public data
-    fetch('/api/stats').then(r => r.json()).then(setStats).catch(console.error)
-    fetch('/api/members/public').then(r => r.json()).then(setMembers).catch(console.error)
-    fetch('/api/rides/upcoming').then(r => r.json()).then(setRides).catch(console.error)
-    fetch('/api/events/upcoming').then(r => r.json()).then(setEvents).catch(console.error)
-    fetch('/api/ranks').then(r => r.json()).then(setRanks).catch(console.error)
-    fetch('/api/positions').then(r => r.json()).then(setPositions).catch(console.error)
-    fetch('/api/content').then(r => r.json()).then(setContent).catch(console.error)
+    // Fetch all public data in parallel for faster loading
+    Promise.all([
+      fetch('/api/stats').then(r => r.json()).catch(() => null),
+      fetch('/api/members/public').then(r => r.json()).catch(() => []),
+      fetch('/api/rides/upcoming').then(r => r.json()).catch(() => []),
+      fetch('/api/events/upcoming').then(r => r.json()).catch(() => []),
+      fetch('/api/ranks').then(r => r.json()).catch(() => []),
+      fetch('/api/positions').then(r => r.json()).catch(() => []),
+      fetch('/api/content').then(r => r.json()).catch(() => null)
+    ]).then(([statsData, membersData, ridesData, eventsData, ranksData, positionsData, contentData]) => {
+      setStats(statsData)
+      setMembers(membersData)
+      setRides(ridesData)
+      setEvents(eventsData)
+      setRanks(ranksData)
+      setPositions(positionsData)
+      setContent(contentData)
+      setLoading(false)
+    })
   }, [])
+
+  if (loading) {
+    return <PageLoader />
+  }
 
   return (
     <main className="min-h-screen bg-black text-white">
