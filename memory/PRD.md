@@ -42,6 +42,13 @@ Full-featured motorcycle club management application for ILTMC - Intrepidus Leon
 - ✅ **Member Chat** - Real-time messaging between club members
 - ✅ **Edit Kilometers** - Members can update their total riding distance
 - ✅ **Password Change** - Secure password update functionality
+- ✅ **Clear Cache** - Clear browser cache to fix loading issues
+
+## Performance Optimizations (March 10, 2026)
+- ✅ **Loading Skeletons** - Admin dashboard shows skeleton loaders while loading
+- ✅ **Page Loader** - Home page shows branded loading animation
+- ✅ **Parallel API Calls** - All API calls now run in parallel for faster loading
+- ✅ **Clear Cache Feature** - Admin and Member portals have cache clearing options
 
 ## Pages
 - `/` - Main landing page
