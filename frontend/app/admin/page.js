@@ -244,7 +244,8 @@ function DashboardTab({ token }) {
   const fetchStats = async () => {
     try {
       const res = await fetch('/api/admin/dashboard', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store'
       })
       const data = await res.json()
       setStats(data)
@@ -255,7 +256,19 @@ function DashboardTab({ token }) {
   }
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64">Loading...</div>
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>Dashboard</h1>
+          <p className="text-gray-400">Welcome to ILTMC Admin Panel</p>
+        </div>
+        <LoadingSkeleton type="stats" />
+        <div className="grid lg:grid-cols-2 gap-6">
+          <LoadingSkeleton />
+          <LoadingSkeleton />
+        </div>
+      </div>
+    )
   }
 
   const statCards = [
