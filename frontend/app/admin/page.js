@@ -25,6 +25,55 @@ import { toast } from 'sonner'
 
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_9bab05d4-0d45-4f8d-a396-cf0659408542/artifacts/lv5k959m_Ilt%20logo.png'
 
+// Loading Skeleton Component
+function LoadingSkeleton({ type = 'card' }) {
+  if (type === 'stats') {
+    return (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <Card key={i} className="bg-zinc-900/50 border-zinc-800 animate-pulse">
+            <CardContent className="p-6">
+              <div className="h-4 bg-zinc-800 rounded w-1/2 mb-4"></div>
+              <div className="h-8 bg-zinc-800 rounded w-3/4"></div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+  
+  if (type === 'table') {
+    return (
+      <div className="space-y-3 animate-pulse">
+        {[...Array(5)].map((_, i) => (
+          <div key={i} className="h-16 bg-zinc-800/50 rounded-lg"></div>
+        ))}
+      </div>
+    )
+  }
+  
+  return (
+    <Card className="bg-zinc-900/50 border-zinc-800 animate-pulse">
+      <CardContent className="p-6">
+        <div className="h-4 bg-zinc-800 rounded w-1/4 mb-4"></div>
+        <div className="h-20 bg-zinc-800 rounded"></div>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Quick Loading Spinner
+function QuickLoader({ text = 'Loading...' }) {
+  return (
+    <div className="flex items-center justify-center py-12">
+      <div className="text-center">
+        <Loader2 className="w-8 h-8 animate-spin text-red-500 mx-auto mb-2" />
+        <p className="text-gray-400 text-sm">{text}</p>
+      </div>
+    </div>
+  )
+}
+
 // Login Component
 function LoginForm({ onLogin }) {
   const [email, setEmail] = useState('')
