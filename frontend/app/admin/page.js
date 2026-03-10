@@ -2671,6 +2671,71 @@ function ProfileTab({ token, user, setUser, setToken }) {
           </ul>
         </CardContent>
       </Card>
+
+      {/* Clear Cache Section */}
+      <Card className="bg-zinc-900/50 border-zinc-800 border-yellow-600/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trash2 size={20} className="text-yellow-500" />
+            Clear Cache & Data
+          </CardTitle>
+          <CardDescription>Clear browser cache to fix loading issues or stale data</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid md:grid-cols-3 gap-4">
+            <Button 
+              variant="outline" 
+              className="border-zinc-700 hover:bg-zinc-800"
+              onClick={() => {
+                localStorage.removeItem('iltmc_cache')
+                sessionStorage.clear()
+                toast.success('Session cache cleared!')
+              }}
+            >
+              <RefreshCw size={16} className="mr-2" />
+              Clear Session Cache
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-zinc-700 hover:bg-zinc-800"
+              onClick={() => {
+                if (typeof caches !== 'undefined') {
+                  caches.keys().then(names => {
+                    names.forEach(name => caches.delete(name))
+                  })
+                }
+                toast.success('Browser cache cleared!')
+              }}
+            >
+              <HardDrive size={16} className="mr-2" />
+              Clear Browser Cache
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-red-700 text-red-400 hover:bg-red-900/30"
+              onClick={() => {
+                if (confirm('This will log you out and clear all stored data. Continue?')) {
+                  localStorage.clear()
+                  sessionStorage.clear()
+                  if (typeof caches !== 'undefined') {
+                    caches.keys().then(names => {
+                      names.forEach(name => caches.delete(name))
+                    })
+                  }
+                  toast.success('All cache cleared! Reloading...')
+                  setTimeout(() => window.location.reload(), 1000)
+                }
+              }}
+            >
+              <Trash2 size={16} className="mr-2" />
+              Clear All & Reload
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500">
+            💡 Tip: If pages load slowly or show stale data, try &quot;Clear All &amp; Reload&quot; to fix it.
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }
