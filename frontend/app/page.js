@@ -539,10 +539,16 @@ function RidesSection({ rides }) {
 
 // Events Section
 function EventsSection({ events }) {
+  const defaultThumbnails = [
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+    'https://images.unsplash.com/photo-1571008887538-b36bb32f4571?w=400',
+    'https://images.unsplash.com/photo-1597738620274-dfcefdcde990?w=400'
+  ]
+
   const displayEvents = events?.length > 0 ? events : [
-    { id: '1', title: 'ILTMC Anniversary Rally', description: 'Celebrating 12 years of brotherhood', date: new Date('2025-08-15'), venue: 'Agartala Central', type: 'Rally' },
-    { id: '2', title: 'Bike Show & Meet', description: 'Display your machine and meet fellow riders', date: new Date('2025-07-01'), venue: 'City Convention Center', type: 'Show' },
-    { id: '3', title: 'Charity Ride for Education', description: 'Riding for a cause - support underprivileged children', date: new Date('2025-06-25'), venue: 'Agartala to Udaipur', type: 'Charity' },
+    { id: '1', title: 'ILTMC Anniversary Rally', description: 'Celebrating 12 years of brotherhood', date: new Date('2025-08-15'), venue: 'Agartala Central', type: 'Rally', thumbnail: defaultThumbnails[0] },
+    { id: '2', title: 'Bike Show & Meet', description: 'Display your machine and meet fellow riders', date: new Date('2025-07-01'), venue: 'City Convention Center', type: 'Show', thumbnail: defaultThumbnails[1] },
+    { id: '3', title: 'Charity Ride for Education', description: 'Riding for a cause - support underprivileged children', date: new Date('2025-06-25'), venue: 'Agartala to Udaipur', type: 'Charity', thumbnail: defaultThumbnails[2] },
   ]
 
   return (
@@ -572,21 +578,37 @@ function EventsSection({ events }) {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="bg-gradient-to-br from-zinc-900 to-zinc-950 border-zinc-800 hover:border-red-500 transition-all duration-300 h-full">
-                <CardContent className="p-6">
-                  <Badge className="mb-4 bg-red-600">{event.type}</Badge>
+              <Card className="bg-gradient-to-br from-zinc-900 to-zinc-950 border-zinc-800 hover:border-red-500 transition-all duration-300 h-full overflow-hidden group">
+                {/* Thumbnail */}
+                <div className="relative h-40 overflow-hidden">
+                  <img 
+                    src={event.thumbnail || defaultThumbnails[index % 3]} 
+                    alt={event.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900/50 to-transparent"></div>
+                  <div className="absolute top-3 left-3">
+                    <Badge className="bg-red-600">{event.type}</Badge>
+                  </div>
+                  {/* Date Badge */}
+                  <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm rounded-lg px-3 py-1 text-center">
+                    <p className="text-red-500 text-xs font-bold">{new Date(event.date).toLocaleDateString('en-IN', { month: 'short' }).toUpperCase()}</p>
+                    <p className="text-white text-xl font-bold leading-none">{new Date(event.date).getDate()}</p>
+                  </div>
+                </div>
+                <CardContent className="p-5">
                   <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Oswald, sans-serif' }}>
                     {event.title}
                   </h3>
-                  <p className="text-gray-400 text-sm mb-4">{event.description}</p>
+                  <p className="text-gray-400 text-sm mb-4 line-clamp-2">{event.description}</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-2">
-                      <Calendar size={16} className="text-red-500" />
-                      <span>{new Date(event.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      <Calendar size={14} className="text-red-500" />
+                      <span>{new Date(event.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-red-500" />
-                      <span>{event.venue}</span>
+                      <MapPin size={14} className="text-red-500" />
+                      <span className="truncate">{event.venue}</span>
                     </div>
                   </div>
                   <Button variant="outline" className="w-full mt-4 border-red-500 text-red-500 hover:bg-red-500 hover:text-white">
