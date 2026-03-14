@@ -2206,7 +2206,7 @@ function ContentTab({ token }) {
             <Card className="bg-zinc-900/50 border-zinc-800">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2"><FileText size={20} /> Footer Content</CardTitle>
-                <CardDescription>Edit footer text and copyright</CardDescription>
+                <CardDescription>Edit footer text, chapters, and copyright</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -2218,6 +2218,130 @@ function ContentTab({ token }) {
                   <Input value={content.footer?.copyright || ''} onChange={(e) => updateFooter('copyright', e.target.value)} className="bg-zinc-800 border-zinc-700" placeholder="© {year} ILTMC. All rights reserved." />
                   <p className="text-xs text-gray-500 mt-1">Use {'{year}'} for dynamic year</p>
                 </div>
+                <Separator className="bg-zinc-800" />
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label>Footer Chapters</Label>
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="border-zinc-700"
+                      onClick={() => {
+                        const chapters = content.footer?.chapters || []
+                        setContent({ ...content, footer: { ...content.footer, chapters: [...chapters, ''] } })
+                      }}
+                    >
+                      <Plus size={14} className="mr-1" /> Add Chapter
+                    </Button>
+                  </div>
+                  <div className="space-y-2">
+                    {(content.footer?.chapters || []).map((chapter, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <Input
+                          value={chapter}
+                          onChange={(e) => {
+                            const chapters = [...(content.footer?.chapters || [])]
+                            chapters[index] = e.target.value
+                            setContent({ ...content, footer: { ...content.footer, chapters } })
+                          }}
+                          className="bg-zinc-800 border-zinc-700"
+                          placeholder={`Chapter ${index + 1}`}
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 hover:bg-red-500/10"
+                          onClick={() => {
+                            const chapters = content.footer?.chapters?.filter((_, i) => i !== index) || []
+                            setContent({ ...content, footer: { ...content.footer, chapters } })
+                          }}
+                        >
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
+                    ))}
+                    {(!content.footer?.chapters || content.footer.chapters.length === 0) && (
+                      <p className="text-sm text-gray-500">No chapters added. Click &quot;Add Chapter&quot; to add one.</p>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Gallery */}
+          {activeSection === 'gallery' && (
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Image size={20} /> Gallery Images</CardTitle>
+                <CardDescription>Manage gallery images (paste image URLs)</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-400">Add image URLs for the gallery section</p>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="border-zinc-700"
+                    onClick={() => {
+                      const gallery = content.gallery || []
+                      setContent({ ...content, gallery: [...gallery, { url: '', caption: '' }] })
+                    }}
+                  >
+                    <Plus size={14} className="mr-1" /> Add Image
+                  </Button>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {(content.gallery || []).map((image, index) => (
+                    <div key={index} className="bg-zinc-800/50 rounded-lg p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Image {index + 1}</span>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-500 hover:bg-red-500/10 h-7 w-7 p-0"
+                          onClick={() => {
+                            const gallery = content.gallery?.filter((_, i) => i !== index) || []
+                            setContent({ ...content, gallery })
+                          }}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                      {image.url && (
+                        <div className="aspect-video rounded overflow-hidden bg-zinc-900">
+                          <img src={image.url} alt={image.caption || `Gallery ${index + 1}`} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <Input
+                        value={image.url || ''}
+                        onChange={(e) => {
+                          const gallery = [...(content.gallery || [])]
+                          gallery[index] = { ...gallery[index], url: e.target.value }
+                          setContent({ ...content, gallery })
+                        }}
+                        className="bg-zinc-900 border-zinc-700 text-sm"
+                        placeholder="https://example.com/image.jpg"
+                      />
+                      <Input
+                        value={image.caption || ''}
+                        onChange={(e) => {
+                          const gallery = [...(content.gallery || [])]
+                          gallery[index] = { ...gallery[index], caption: e.target.value }
+                          setContent({ ...content, gallery })
+                        }}
+                        className="bg-zinc-900 border-zinc-700 text-sm"
+                        placeholder="Image caption (optional)"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {(!content.gallery || content.gallery.length === 0) && (
+                  <div className="text-center py-8 text-gray-500">
+                    <Image size={48} className="mx-auto mb-2 opacity-50" />
+                    <p>No gallery images yet. Click &quot;Add Image&quot; to add one.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
