@@ -3199,6 +3199,7 @@ export default function AdminPage() {
       case 'chapters': return <ChaptersTab token={token} />
       case 'rides': return <RidesTab token={token} />
       case 'attendance': return <AttendanceTab token={token} />
+      case 'topriders': return <TopRidersAdminTab token={token} />
       case 'events': return <EventsTab token={token} />
       case 'applications': return <ApplicationsTab token={token} />
       case 'contacts': return <ContactsTab token={token} />
