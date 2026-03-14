@@ -24,6 +24,33 @@ import { toast } from 'sonner'
 
 const LOGO_URL = 'https://customer-assets.emergentagent.com/job_9bab05d4-0d45-4f8d-a396-cf0659408542/artifacts/lv5k959m_Ilt%20logo.png'
 
+// Common emojis for chat
+const CHAT_EMOJIS = ['👍', '❤️', '😀', '😂', '🔥', '👏', '🏍️', '💪', '🎉', '✌️', '🤘', '😎', '🙏', '💯', '⭐', '🏆']
+
+// Format last seen time
+function formatLastSeen(lastSeen) {
+  if (!lastSeen) return 'Never'
+  
+  const now = new Date()
+  const lastSeenDate = new Date(lastSeen)
+  const diffMs = now - lastSeenDate
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+
+  if (diffMins < 5) return 'Just now'
+  if (diffMins < 60) return `${diffMins} mins ago`
+  if (diffHours < 24) return `${diffHours} hours ago`
+  if (diffDays < 7) return `${diffDays} days ago`
+  return lastSeenDate.toLocaleDateString()
+}
+
+// Check if member is online (active in last 5 minutes)
+function isOnline(lastSeen) {
+  if (!lastSeen) return false
+  return (new Date() - new Date(lastSeen)) < 300000
+}
+
 // Math Captcha Component
 function MathCaptcha({ captchaId, setCaptchaId, captchaQuestion, setCaptchaQuestion, captchaAnswer, setCaptchaAnswer }) {
   const [loading, setLoading] = useState(false)
