@@ -907,9 +907,13 @@ function AttendanceTab({ token }) {
   const [members, setMembers] = useState([])
   const [selectedRide, setSelectedRide] = useState(null)
   const [attendance, setAttendance] = useState({})
+  const [activeSubTab, setActiveSubTab] = useState('self-attendance')
+  const [selfAttendanceRecords, setSelfAttendanceRecords] = useState([])
+  const [loadingSelfAttendance, setLoadingSelfAttendance] = useState(true)
 
   useEffect(() => {
     fetchData()
+    fetchSelfAttendance()
   }, [])
 
   const fetchData = async () => {
@@ -919,6 +923,21 @@ function AttendanceTab({ token }) {
     ])
     setRides(await ridesRes.json())
     setMembers(await membersRes.json())
+  }
+
+  const fetchSelfAttendance = async () => {
+    try {
+      const res = await fetch('/api/admin/self-attendance', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSelfAttendanceRecords(Array.isArray(data) ? data : [])
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    setLoadingSelfAttendance(false)
   }
 
   const fetchAttendance = async (rideId) => {
@@ -945,91 +964,287 @@ function AttendanceTab({ token }) {
     toast.success(present ? 'Marked present' : 'Marked absent')
   }
 
+  const updateSelfAttendanceStatus = async (recordId, status) => {
+    try {
+      const res = await fetch('/api/admin/self-attendance/update', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ recordId, status })
+      })
+      if (res.ok) {
+        toast.success(`Attendance ${status}!`)
+        fetchSelfAttendance()
+      } else {
+        toast.error('Failed to update')
+      }
+    } catch (error) {
+      toast.error('Failed to update')
+    }
+  }
+
+  const getTypeIcon = (type) => {
+    switch (type) {
+      case 'club_meeting': return <Users className="text-blue-500" size={16} />
+      case 'ride': return <Bike className="text-green-500" size={16} />
+      case 'charity': return <Trophy className="text-pink-500" size={16} />
+      default: return <Calendar className="text-gray-500" size={16} />
+    }
+  }
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case 'club_meeting': return 'Club Meeting'
+      case 'ride': return 'Ride'
+      case 'charity': return 'Charity Event'
+      default: return 'Other'
+    }
+  }
+
+  const pendingCount = selfAttendanceRecords.filter(r => r.status === 'pending').length
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>Attendance</h1>
-        <p className="text-gray-400">Track member attendance for rides</p>
+        <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>Attendance Management</h1>
+        <p className="text-gray-400">Track and approve member attendance</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardHeader>
-            <CardTitle>Select Ride</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ScrollArea className="h-[400px]">
-              <div className="space-y-2">
-                {rides.map((ride) => (
-                  <button
-                    key={ride.id}
-                    onClick={() => fetchAttendance(ride.id)}
-                    className={`w-full text-left p-3 rounded-lg transition-colors ${
-                      selectedRide === ride.id ? 'bg-red-600' : 'bg-zinc-800 hover:bg-zinc-700'
-                    }`}
-                  >
-                    <p className="font-medium">{ride.title}</p>
-                    <p className="text-sm text-gray-400">{new Date(ride.date).toLocaleDateString()}</p>
-                  </button>
-                ))}
-                {rides.length === 0 && (
-                  <p className="text-gray-500 text-center py-4">No rides available</p>
-                )}
-              </div>
-            </ScrollArea>
-          </CardContent>
-        </Card>
+      {/* Sub-tabs */}
+      <div className="flex gap-2 border-b border-zinc-800 pb-2">
+        <button
+          onClick={() => setActiveSubTab('self-attendance')}
+          className={`px-4 py-2 rounded-t-lg font-medium transition-colors flex items-center gap-2 ${
+            activeSubTab === 'self-attendance' 
+              ? 'bg-red-600 text-white' 
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <CheckCircle size={16} />
+          Self Attendance
+          {pendingCount > 0 && (
+            <Badge className="bg-yellow-600 text-xs">{pendingCount}</Badge>
+          )}
+        </button>
+        <button
+          onClick={() => setActiveSubTab('ride-attendance')}
+          className={`px-4 py-2 rounded-t-lg font-medium transition-colors flex items-center gap-2 ${
+            activeSubTab === 'ride-attendance' 
+              ? 'bg-red-600 text-white' 
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <MapPin size={16} />
+          Ride Attendance
+        </button>
+      </div>
 
-        <Card className="lg:col-span-2 bg-zinc-900/50 border-zinc-800">
-          <CardHeader>
-            <CardTitle>Mark Attendance</CardTitle>
-            <CardDescription>
-              {selectedRide ? `${members.length} members` : 'Select a ride to mark attendance'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {selectedRide ? (
+      {/* Self Attendance Management */}
+      {activeSubTab === 'self-attendance' && (
+        <div className="space-y-4">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-yellow-500">{pendingCount}</p>
+                <p className="text-xs text-gray-400">Pending</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-green-500">
+                  {selfAttendanceRecords.filter(r => r.status === 'approved').length}
+                </p>
+                <p className="text-xs text-gray-400">Approved</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-red-500">
+                  {selfAttendanceRecords.filter(r => r.status === 'rejected').length}
+                </p>
+                <p className="text-xs text-gray-400">Rejected</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-zinc-900/50 border-zinc-800">
+              <CardContent className="p-4 text-center">
+                <p className="text-2xl font-bold text-blue-500">{selfAttendanceRecords.length}</p>
+                <p className="text-xs text-gray-400">Total Records</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Attendance Records Table */}
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Member Self-Attendance Records</CardTitle>
+              <CardDescription>Approve or reject attendance submitted by members</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingSelfAttendance ? (
+                <div className="text-center py-8">Loading...</div>
+              ) : selfAttendanceRecords.length > 0 ? (
+                <ScrollArea className="h-[500px]">
+                  <div className="space-y-3">
+                    {selfAttendanceRecords.map((record) => (
+                      <div 
+                        key={record.id} 
+                        className={`p-4 rounded-lg border transition-colors ${
+                          record.status === 'pending' 
+                            ? 'bg-yellow-900/10 border-yellow-600/30' 
+                            : record.status === 'approved'
+                              ? 'bg-green-900/10 border-green-600/30'
+                              : 'bg-red-900/10 border-red-600/30'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center">
+                              {getTypeIcon(record.type)}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{record.memberName}</p>
+                                <Badge className={
+                                  record.status === 'pending' ? 'bg-yellow-600' :
+                                  record.status === 'approved' ? 'bg-green-600' : 'bg-red-600'
+                                }>
+                                  {record.status}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-gray-400">
+                                {getTypeLabel(record.type)} • {new Date(record.date).toLocaleDateString()}
+                              </p>
+                              {record.description && (
+                                <p className="text-sm text-gray-500 mt-1">{record.description}</p>
+                              )}
+                              {record.kilometers && (
+                                <p className="text-sm text-green-400 mt-1">Distance: {record.kilometers} KM</p>
+                              )}
+                              <p className="text-xs text-gray-600 mt-1">
+                                Submitted: {new Date(record.createdAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          {record.status === 'pending' && (
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => updateSelfAttendanceStatus(record.id, 'approved')}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle size={14} className="mr-1" /> Approve
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => updateSelfAttendanceStatus(record.id, 'rejected')}
+                                className="bg-red-600 hover:bg-red-700"
+                              >
+                                <XCircle size={14} className="mr-1" /> Reject
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <CheckCircle size={48} className="mx-auto mb-4 opacity-50" />
+                  <p>No self-attendance records yet</p>
+                  <p className="text-sm">Members can submit attendance from their portal</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Ride Attendance */}
+      {activeSubTab === 'ride-attendance' && (
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Card className="bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Select Ride</CardTitle>
+            </CardHeader>
+            <CardContent>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-2">
-                  {members.map((member) => (
-                    <div key={member.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">
-                          <User size={16} />
-                        </div>
-                        <div>
-                          <p className="font-medium">{member.name}</p>
-                          <p className="text-sm text-gray-400">&quot;{member.roadName}&quot;</p>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => markAttendance(member.id, true)}
-                          className={attendance[member.id] === true ? 'bg-green-600' : 'bg-zinc-700'}
-                        >
-                          <CheckCircle size={16} />
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => markAttendance(member.id, false)}
-                          className={attendance[member.id] === false ? 'bg-red-600' : 'bg-zinc-700'}
-                        >
-                          <XCircle size={16} />
-                        </Button>
-                      </div>
-                    </div>
+                  {rides.map((ride) => (
+                    <button
+                      key={ride.id}
+                      onClick={() => fetchAttendance(ride.id)}
+                      className={`w-full text-left p-3 rounded-lg transition-colors ${
+                        selectedRide === ride.id ? 'bg-red-600' : 'bg-zinc-800 hover:bg-zinc-700'
+                      }`}
+                    >
+                      <p className="font-medium">{ride.title}</p>
+                      <p className="text-sm text-gray-400">{new Date(ride.date).toLocaleDateString()}</p>
+                    </button>
                   ))}
+                  {rides.length === 0 && (
+                    <p className="text-gray-500 text-center py-4">No rides available</p>
+                  )}
                 </div>
               </ScrollArea>
-            ) : (
-              <div className="h-[400px] flex items-center justify-center text-gray-500">
-                <p>Select a ride from the left panel</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2 bg-zinc-900/50 border-zinc-800">
+            <CardHeader>
+              <CardTitle>Mark Attendance</CardTitle>
+              <CardDescription>
+                {selectedRide ? `${members.length} members` : 'Select a ride to mark attendance'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selectedRide ? (
+                <ScrollArea className="h-[400px]">
+                  <div className="space-y-2">
+                    {members.map((member) => (
+                      <div key={member.id} className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center">
+                            <User size={16} />
+                          </div>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-gray-400">&quot;{member.roadName}&quot;</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => markAttendance(member.id, true)}
+                            className={attendance[member.id] === true ? 'bg-green-600' : 'bg-zinc-700'}
+                          >
+                            <CheckCircle size={16} />
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => markAttendance(member.id, false)}
+                            className={attendance[member.id] === false ? 'bg-red-600' : 'bg-zinc-700'}
+                          >
+                            <XCircle size={16} />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <div className="h-[400px] flex items-center justify-center text-gray-500">
+                  <p>Select a ride from the left panel</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
