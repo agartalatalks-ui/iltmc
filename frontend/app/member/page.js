@@ -1088,7 +1088,7 @@ function SelfAttendanceTab({ token, profile }) {
   )
 }
 
-// Member Chat Tab
+// Member Chat Tab with Emoji Support and Online Status
 function ChatTab({ token, profile }) {
   const [members, setMembers] = useState([])
   const [selectedMember, setSelectedMember] = useState(null)
@@ -1096,10 +1096,14 @@ function ChatTab({ token, profile }) {
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const messagesEndRef = useRef(null)
 
   useEffect(() => {
     fetchMembers()
+    // Refresh member list every 30 seconds to update online status
+    const interval = setInterval(fetchMembers, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -1125,7 +1129,17 @@ function ChatTab({ token, profile }) {
       })
       if (res.ok) {
         const data = await res.json()
-        setMembers(data.filter(m => m.id !== profile?.id))
+        // Sort: online members first, then by name
+        const sorted = data
+          .filter(m => m.id !== profile?.id)
+          .sort((a, b) => {
+            const aOnline = isOnline(a.lastSeen)
+            const bOnline = isOnline(b.lastSeen)
+            if (aOnline && !bOnline) return -1
+            if (!aOnline && bOnline) return 1
+            return (a.name || '').localeCompare(b.name || '')
+          })
+        setMembers(sorted)
       }
     } catch (error) {
       console.error(error)
@@ -1165,6 +1179,7 @@ function ChatTab({ token, profile }) {
 
       if (res.ok) {
         setNewMessage('')
+        setShowEmojiPicker(false)
         fetchMessages(selectedMember.id)
       }
     } catch (error) {
@@ -1173,18 +1188,34 @@ function ChatTab({ token, profile }) {
     setSending(false)
   }
 
+  const addEmoji = (emoji) => {
+    setNewMessage(prev => prev + emoji)
+  }
+
+  const onlineCount = members.filter(m => isOnline(m.lastSeen)).length
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>Member Chat</h1>
-        <p className="text-gray-400">Connect with other club members</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>Member Chat</h1>
+          <p className="text-gray-400">Connect with other club members</p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900/50 rounded-full border border-zinc-800">
+          <Circle size={8} className="fill-green-500 text-green-500" />
+          <span className="text-green-400 font-medium">{onlineCount}</span>
+          <span className="text-gray-400 text-sm">online</span>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
         {/* Members List */}
         <Card className="bg-zinc-900/50 border-zinc-800">
-          <CardHeader>
-            <CardTitle className="text-sm">Members</CardTitle>
+          <CardHeader className="py-3">
+            <CardTitle className="text-sm flex items-center justify-between">
+              <span>Members</span>
+              <Badge variant="outline" className="border-zinc-700">{members.length}</Badge>
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-0">
             <ScrollArea className="h-[500px]">
@@ -1192,27 +1223,42 @@ function ChatTab({ token, profile }) {
                 <p className="text-center py-4">Loading...</p>
               ) : members.length > 0 ? (
                 <div className="divide-y divide-zinc-800">
-                  {members.map((member) => (
-                    <button
-                      key={member.id}
-                      onClick={() => setSelectedMember(member)}
-                      className={`w-full p-3 flex items-center gap-3 hover:bg-zinc-800 transition-colors ${
-                        selectedMember?.id === member.id ? 'bg-zinc-800 border-l-2 border-red-500' : ''
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
-                        {member.profilePicture ? (
-                          <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <User size={20} />
-                        )}
-                      </div>
-                      <div className="text-left">
-                        <p className="font-medium text-sm">{member.name}</p>
-                        <p className="text-xs text-gray-400">{member.roadName && `"${member.roadName}"`}</p>
-                      </div>
-                    </button>
-                  ))}
+                  {members.map((member) => {
+                    const memberOnline = isOnline(member.lastSeen)
+                    return (
+                      <button
+                        key={member.id}
+                        onClick={() => setSelectedMember(member)}
+                        className={`w-full p-3 flex items-center gap-3 hover:bg-zinc-800 transition-colors ${
+                          selectedMember?.id === member.id ? 'bg-zinc-800 border-l-2 border-red-500' : ''
+                        }`}
+                      >
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+                            {member.profilePicture ? (
+                              <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
+                            ) : (
+                              <User size={20} />
+                            )}
+                          </div>
+                          {/* Online indicator */}
+                          <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-zinc-900 ${
+                            memberOnline ? 'bg-green-500' : 'bg-gray-500'
+                          }`}></div>
+                        </div>
+                        <div className="text-left flex-1 min-w-0">
+                          <p className="font-medium text-sm truncate">{member.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {memberOnline ? (
+                              <span className="text-green-400">Online</span>
+                            ) : (
+                              <span>{formatLastSeen(member.lastSeen)}</span>
+                            )}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               ) : (
                 <p className="text-center py-4 text-gray-500">No members found</p>
@@ -1226,17 +1272,30 @@ function ChatTab({ token, profile }) {
           {selectedMember ? (
             <>
               <CardHeader className="border-b border-zinc-800 py-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
-                    {selectedMember.profilePicture ? (
-                      <img src={selectedMember.profilePicture} alt={selectedMember.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <User size={20} />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium">{selectedMember.name}</p>
-                    <p className="text-xs text-gray-400">{selectedMember.rank || 'Member'}</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative">
+                      <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+                        {selectedMember.profilePicture ? (
+                          <img src={selectedMember.profilePicture} alt={selectedMember.name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User size={20} />
+                        )}
+                      </div>
+                      <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-zinc-900 ${
+                        isOnline(selectedMember.lastSeen) ? 'bg-green-500' : 'bg-gray-500'
+                      }`}></div>
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedMember.name}</p>
+                      <p className="text-xs text-gray-400">
+                        {isOnline(selectedMember.lastSeen) ? (
+                          <span className="text-green-400">Online now</span>
+                        ) : (
+                          <span>Last seen: {formatLastSeen(selectedMember.lastSeen)}</span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -1253,7 +1312,7 @@ function ChatTab({ token, profile }) {
                             ? 'bg-red-600 text-white' 
                             : 'bg-zinc-800 text-gray-200'
                         }`}>
-                          <p className="text-sm">{msg.message}</p>
+                          <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
                           <p className="text-xs opacity-70 mt-1">
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </p>
@@ -1264,11 +1323,35 @@ function ChatTab({ token, profile }) {
                   </div>
                 </ScrollArea>
                 <div className="p-4 border-t border-zinc-800">
+                  {/* Emoji Picker */}
+                  {showEmojiPicker && (
+                    <div className="mb-2 p-2 bg-zinc-800 rounded-lg">
+                      <div className="flex flex-wrap gap-1">
+                        {CHAT_EMOJIS.map((emoji, i) => (
+                          <button
+                            key={i}
+                            onClick={() => addEmoji(emoji)}
+                            className="w-8 h-8 text-lg hover:bg-zinc-700 rounded transition-colors"
+                          >
+                            {emoji}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                      className={`border-zinc-700 ${showEmojiPicker ? 'bg-zinc-700' : ''}`}
+                    >
+                      <Smile size={18} />
+                    </Button>
                     <Input
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                      onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                       className="bg-zinc-800 border-zinc-700"
                       placeholder="Type a message..."
                     />
