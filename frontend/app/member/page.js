@@ -1380,6 +1380,165 @@ function ChatTab({ token, profile }) {
   )
 }
 
+// Top Riders Tab - Leaderboard
+function TopRidersTab({ token }) {
+  const [leaderboard, setLeaderboard] = useState({ kilometers: [], charity: [], meetings: [] })
+  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('kilometers')
+
+  useEffect(() => {
+    fetchLeaderboard()
+  }, [])
+
+  const fetchLeaderboard = async () => {
+    try {
+      const res = await fetch('/api/member/leaderboard', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        setLeaderboard(await res.json())
+      }
+    } catch (error) {
+      console.error(error)
+    }
+    setLoading(false)
+  }
+
+  const categories = [
+    { id: 'kilometers', label: 'Top Kilometers', icon: Gauge, color: 'text-green-500', bgColor: 'bg-green-500' },
+    { id: 'charity', label: 'Top Charity', icon: Heart, color: 'text-pink-500', bgColor: 'bg-pink-500' },
+    { id: 'meetings', label: 'Top Attendance', icon: Users, color: 'text-blue-500', bgColor: 'bg-blue-500' },
+  ]
+
+  const getMedalIcon = (index) => {
+    if (index === 0) return <Crown className="text-yellow-400" size={24} />
+    if (index === 1) return <Medal className="text-gray-300" size={22} />
+    if (index === 2) return <Medal className="text-amber-600" size={20} />
+    return <span className="text-gray-500 font-bold">{index + 1}</span>
+  }
+
+  const getMedalBg = (index) => {
+    if (index === 0) return 'bg-gradient-to-r from-yellow-600/20 to-yellow-400/10 border-yellow-500/50'
+    if (index === 1) return 'bg-gradient-to-r from-gray-500/20 to-gray-400/10 border-gray-400/50'
+    if (index === 2) return 'bg-gradient-to-r from-amber-700/20 to-amber-500/10 border-amber-600/50'
+    return 'bg-zinc-800/50 border-zinc-700'
+  }
+
+  const currentCategory = categories.find(c => c.id === activeCategory)
+  const currentData = leaderboard[activeCategory] || []
+
+  return (
+    <div className="space-y-6">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>
+          <Trophy className="inline-block text-yellow-500 mr-2" size={32} />
+          TOP RIDERS <span className="text-red-500">2026</span>
+        </h1>
+        <p className="text-gray-400 mt-2">Celebrating our most active members this year</p>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="flex justify-center gap-3">
+        {categories.map((cat) => (
+          <button
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${
+              activeCategory === cat.id
+                ? `${cat.bgColor} text-white shadow-lg`
+                : 'bg-zinc-800 text-gray-400 hover:bg-zinc-700'
+            }`}
+          >
+            <cat.icon size={18} />
+            {cat.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Leaderboard */}
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <currentCategory.icon className={currentCategory.color} size={24} />
+            {currentCategory.label}
+          </CardTitle>
+          <CardDescription>
+            {activeCategory === 'kilometers' && 'Members ranked by total kilometers ridden'}
+            {activeCategory === 'charity' && 'Members ranked by charity events attended'}
+            {activeCategory === 'meetings' && 'Members ranked by club meetings attended'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="text-center py-12">
+              <Loader2 className="animate-spin mx-auto mb-2" size={32} />
+              <p className="text-gray-400">Loading leaderboard...</p>
+            </div>
+          ) : currentData.length > 0 ? (
+            <div className="space-y-3">
+              {currentData.map((rider, index) => (
+                <div
+                  key={rider.id}
+                  className={`flex items-center gap-4 p-4 rounded-xl border transition-all hover:scale-[1.01] ${getMedalBg(index)}`}
+                >
+                  {/* Rank */}
+                  <div className="w-12 h-12 flex items-center justify-center">
+                    {getMedalIcon(index)}
+                  </div>
+
+                  {/* Profile */}
+                  <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+                    {rider.profilePicture ? (
+                      <img src={rider.profilePicture} alt={rider.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={24} />
+                    )}
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1">
+                    <p className="font-bold text-lg">{rider.name}</p>
+                    <p className="text-sm text-gray-400">
+                      {rider.roadName && `"${rider.roadName}" • `}
+                      {rider.rank || 'Member'}
+                    </p>
+                  </div>
+
+                  {/* Score */}
+                  <div className="text-right">
+                    <p className={`text-2xl font-bold ${currentCategory.color}`}>
+                      {rider.score}
+                      {activeCategory === 'kilometers' && <span className="text-sm font-normal ml-1">KM</span>}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {activeCategory === 'kilometers' && 'Total Distance'}
+                      {activeCategory === 'charity' && 'Events Attended'}
+                      {activeCategory === 'meetings' && 'Meetings Attended'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-12 text-gray-500">
+              <Trophy size={48} className="mx-auto mb-4 opacity-50" />
+              <p>No data available yet</p>
+              <p className="text-sm">Start participating in club activities!</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Motivational Message */}
+      <div className="text-center p-6 bg-gradient-to-r from-red-900/20 to-zinc-900 rounded-xl border border-red-500/20">
+        <Star className="mx-auto text-yellow-500 mb-2" size={32} />
+        <p className="text-lg font-medium">Keep riding, keep climbing the ranks!</p>
+        <p className="text-gray-400 text-sm mt-1">Every kilometer counts towards your legacy</p>
+      </div>
+    </div>
+  )
+}
+
 // Ride Upload Tab
 function RideUploadTab({ token }) {
   const [uploads, setUploads] = useState([])
