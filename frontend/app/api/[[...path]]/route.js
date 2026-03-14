@@ -607,6 +607,12 @@ async function handleRoute(request, { params }) {
         return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
       }
 
+      // Update lastSeen timestamp
+      await db.collection('members').updateOne(
+        { accountId: user.id },
+        { $set: { lastSeen: new Date() } }
+      )
+
       const memberProfile = await db.collection('members').findOne({ accountId: user.id })
       if (!memberProfile) {
         return handleCORS(NextResponse.json({ error: 'Profile not found' }, { status: 404 }))
