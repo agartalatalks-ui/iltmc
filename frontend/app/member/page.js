@@ -2006,6 +2006,7 @@ export default function MemberPortal() {
         {activeTab === 'dashboard' && <DashboardTab profile={profile} stats={stats} />}
         {activeTab === 'profile' && <ProfileTab token={token} profile={profile} setProfile={setProfile} />}
         {activeTab === 'self-attendance' && <SelfAttendanceTab token={token} profile={profile} />}
+        {activeTab === 'top-riders' && <TopRidersTab token={token} />}
         {activeTab === 'chat' && <ChatTab token={token} profile={profile} />}
         {activeTab === 'upload' && <RideUploadTab token={token} />}
         {activeTab === 'password' && <PasswordTab token={token} />}
