@@ -34,7 +34,7 @@ function Navbar({ content }) {
   const navItems = [
     { label: 'Home', href: '#home' },
     { label: 'About', href: '#about' },
-    { label: 'Members', href: '#members' },
+    { label: 'Members', href: '/members' },
     { label: 'Rides', href: '#rides' },
     { label: 'Events', href: '#events' },
     { label: 'Gallery', href: '/gallery' },
