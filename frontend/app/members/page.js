@@ -175,7 +175,8 @@ function MemberCard({ member, ranks, positions }) {
 
 // Online Members Counter
 function OnlineCounter({ members }) {
-  const onlineCount = members.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000).length
+  const memberArray = Array.isArray(members) ? members : []
+  const onlineCount = memberArray.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000).length
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 bg-zinc-900/50 rounded-full border border-zinc-800">
@@ -186,7 +187,7 @@ function OnlineCounter({ members }) {
       </div>
       <div className="w-px h-4 bg-zinc-700"></div>
       <div className="flex items-center gap-2">
-        <span className="text-gray-400">{members.length}</span>
+        <span className="text-gray-400">{memberArray.length}</span>
         <span className="text-gray-500">Total Members</span>
       </div>
     </div>
