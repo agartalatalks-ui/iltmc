@@ -37,7 +37,7 @@ function Navbar({ content }) {
     { label: 'Members', href: '#members' },
     { label: 'Rides', href: '#rides' },
     { label: 'Events', href: '#events' },
-    { label: 'Gallery', href: '#gallery' },
+    { label: 'Gallery', href: '/gallery' },
     { label: 'Contact', href: '#contact' },
     { label: 'Member Login', href: '/member' },
   ]
