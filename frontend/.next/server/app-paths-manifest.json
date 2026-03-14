@@ -1,10 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/admin/page": "app/admin/page.js",
+  "/gallery/page": "app/gallery/page.js",
   "/page": "app/page.js",
   "/api/download/route": "app/api/download/route.js",
   "/robots.txt/route": "app/robots.txt/route.js",
   "/sitemap.xml/route": "app/sitemap.xml/route.js",
   "/member/page": "app/member/page.js",
+  "/admin/page": "app/admin/page.js",
   "/api/[[...path]]/route": "app/api/[[...path]]/route.js"
 }
