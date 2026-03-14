@@ -586,8 +586,11 @@ function EventsSection({ events }) {
 }
 
 // Gallery Section
-function GallerySection() {
-  const galleryImages = [HERO_BG, ABOUT_IMG, RIDES_IMG, GALLERY_IMG, HERO_BG, ABOUT_IMG]
+function GallerySection({ content }) {
+  const defaultImages = [HERO_BG, ABOUT_IMG, RIDES_IMG, GALLERY_IMG, HERO_BG, ABOUT_IMG]
+  const galleryImages = content?.gallery?.length > 0 
+    ? content.gallery.map(img => ({ url: img.url, caption: img.caption }))
+    : defaultImages.map((url, i) => ({ url, caption: `ILTMC Ride ${i + 1}` }))
 
   return (
     <section id="gallery" className="py-24 bg-gradient-to-b from-zinc-950 to-black">
@@ -618,12 +621,13 @@ function GallerySection() {
               className={`relative overflow-hidden rounded-xl ${index === 0 ? 'col-span-2 row-span-2' : ''}`}
             >
               <img
-                src={img}
-                alt={`Gallery ${index + 1}`}
+                src={img.url}
+                alt={img.caption || `Gallery ${index + 1}`}
                 className="w-full h-full object-cover aspect-square hover:scale-110 transition-transform duration-500"
+                loading="lazy"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <p className="text-white font-medium">ILTMC Ride {index + 1}</p>
+                <p className="text-white font-medium">{img.caption || `ILTMC Ride ${index + 1}`}</p>
               </div>
             </motion.div>
           ))}
