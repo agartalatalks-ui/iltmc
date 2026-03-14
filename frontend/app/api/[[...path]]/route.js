@@ -909,12 +909,17 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(members))
     }
 
-    // Member leaderboard - Top Riders
+    // Member leaderboard - Top Riders (with year filter)
     if (route === '/member/leaderboard' && method === 'GET') {
       const user = await authenticateRequest(request)
       if (!user || user.role !== 'member') {
         return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
       }
+
+      // Get year from query params
+      const url = new URL(request.url)
+      const yearParam = url.searchParams.get('year')
+      const selectedYear = yearParam ? parseInt(yearParam) : new Date().getFullYear()
 
       // Get all members
       const members = await db.collection('members')
@@ -922,10 +927,19 @@ async function handleRoute(request, { params }) {
         .project({ _id: 0, id: 1, name: 1, roadName: 1, rank: 1, profilePicture: 1, totalKilometers: 1 })
         .toArray()
 
-      // Get approved self-attendance records for current year
-      const currentYear = new Date().getFullYear()
-      const startOfYear = new Date(currentYear, 0, 1)
-      const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59)
+      // Check for admin overrides for this year
+      const yearlyOverrides = await db.collection('leaderboard_overrides')
+        .find({ year: selectedYear })
+        .toArray()
+      
+      const overridesMap = {}
+      yearlyOverrides.forEach(o => {
+        overridesMap[o.memberId] = o
+      })
+
+      // Get approved self-attendance records for selected year (Jan 1 - Dec 31)
+      const startOfYear = new Date(selectedYear, 0, 1)
+      const endOfYear = new Date(selectedYear, 11, 31, 23, 59, 59)
 
       const attendanceRecords = await db.collection('self_attendance')
         .find({ 
@@ -934,35 +948,55 @@ async function handleRoute(request, { params }) {
         })
         .toArray()
 
-      // Calculate charity and meeting counts per member
+      // Calculate charity, meeting counts, and ride kilometers per member for the selected year
       const memberStats = {}
       attendanceRecords.forEach(record => {
         if (!memberStats[record.memberId]) {
-          memberStats[record.memberId] = { charity: 0, meetings: 0 }
+          memberStats[record.memberId] = { charity: 0, meetings: 0, yearlyKilometers: 0 }
         }
         if (record.type === 'charity') memberStats[record.memberId].charity++
         if (record.type === 'club_meeting') memberStats[record.memberId].meetings++
+        if (record.type === 'ride' && record.kilometers) {
+          memberStats[record.memberId].yearlyKilometers += record.kilometers
+        }
       })
 
-      // Build leaderboards
+      // Build leaderboards with admin overrides
       const kilometersLeaderboard = members
-        .map(m => ({ ...m, score: m.totalKilometers || 0 }))
+        .map(m => {
+          const override = overridesMap[m.id]
+          const yearlyKm = memberStats[m.id]?.yearlyKilometers || 0
+          // Use override if exists, otherwise use yearly calculated km
+          const score = override?.kilometers !== undefined ? override.kilometers : yearlyKm
+          return { ...m, score, hasOverride: !!override?.kilometers }
+        })
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
 
       const charityLeaderboard = members
-        .map(m => ({ ...m, score: memberStats[m.id]?.charity || 0 }))
+        .map(m => {
+          const override = overridesMap[m.id]
+          const charityCount = memberStats[m.id]?.charity || 0
+          const score = override?.charity !== undefined ? override.charity : charityCount
+          return { ...m, score, hasOverride: !!override?.charity }
+        })
         .filter(m => m.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
 
       const meetingsLeaderboard = members
-        .map(m => ({ ...m, score: memberStats[m.id]?.meetings || 0 }))
+        .map(m => {
+          const override = overridesMap[m.id]
+          const meetingsCount = memberStats[m.id]?.meetings || 0
+          const score = override?.meetings !== undefined ? override.meetings : meetingsCount
+          return { ...m, score, hasOverride: !!override?.meetings }
+        })
         .filter(m => m.score > 0)
         .sort((a, b) => b.score - a.score)
         .slice(0, 10)
 
       return handleCORS(NextResponse.json({
+        year: selectedYear,
         kilometers: kilometersLeaderboard,
         charity: charityLeaderboard,
         meetings: meetingsLeaderboard
