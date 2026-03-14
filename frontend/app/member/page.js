@@ -1944,6 +1944,7 @@ export default function MemberPortal() {
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'profile', label: 'Profile', icon: User },
     { id: 'self-attendance', label: 'Self Attendance', icon: CheckCircle },
+    { id: 'top-riders', label: 'Top Riders', icon: Trophy },
     { id: 'chat', label: 'Chat', icon: MessageCircle },
     { id: 'upload', label: 'Ride Upload', icon: Upload },
     { id: 'password', label: 'Password', icon: Settings },
