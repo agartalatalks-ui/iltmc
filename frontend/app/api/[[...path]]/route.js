@@ -1207,6 +1207,50 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(stats))
     }
 
+    // ==================== SELF ATTENDANCE MANAGEMENT ====================
+
+    // Admin get all self-attendance records
+    if (route === '/admin/self-attendance' && method === 'GET') {
+      const user = await authenticateRequest(request)
+      if (!user || !['admin', 'super_admin'].includes(user.role)) {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const records = await db.collection('self_attendance')
+        .find({})
+        .sort({ createdAt: -1 })
+        .toArray()
+
+      const cleanedRecords = records.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleanedRecords))
+    }
+
+    // Admin update self-attendance status
+    if (route === '/admin/self-attendance/update' && method === 'POST') {
+      const user = await authenticateRequest(request)
+      if (!user || !['admin', 'super_admin'].includes(user.role)) {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { recordId, status } = await request.json()
+      if (!recordId || !status || !['approved', 'rejected'].includes(status)) {
+        return handleCORS(NextResponse.json({ error: 'Valid recordId and status required' }, { status: 400 }))
+      }
+
+      await db.collection('self_attendance').updateOne(
+        { id: recordId },
+        { 
+          $set: { 
+            status, 
+            reviewedBy: user.id,
+            reviewedAt: new Date() 
+          } 
+        }
+      )
+
+      return handleCORS(NextResponse.json({ message: `Attendance ${status}` }))
+    }
+
     // ==================== EVENTS CRUD ====================
     
     // Get all events (admin)
