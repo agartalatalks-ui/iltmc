@@ -1469,6 +1469,401 @@ function EventsTab({ token }) {
   )
 }
 
+// Top Riders Admin Tab - Manage Leaderboard Data
+function TopRidersAdminTab({ token }) {
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+  const [showEditDialog, setShowEditDialog] = useState(false)
+  const [editingMember, setEditingMember] = useState(null)
+  const [editFormData, setEditFormData] = useState({
+    kilometers: '',
+    charity: '',
+    meetings: ''
+  })
+  const [saving, setSaving] = useState(false)
+
+  // Generate year options (current year back to 2013)
+  const currentYear = new Date().getFullYear()
+  const yearOptions = []
+  for (let year = currentYear; year >= 2013; year--) {
+    yearOptions.push(year)
+  }
+
+  useEffect(() => {
+    fetchLeaderboardData()
+  }, [selectedYear])
+
+  const fetchLeaderboardData = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/admin/leaderboard?year=${selectedYear}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setMembers(data.members || [])
+      }
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to load leaderboard data')
+    }
+    setLoading(false)
+  }
+
+  const openEditDialog = (member) => {
+    setEditingMember(member)
+    setEditFormData({
+      kilometers: member.override?.kilometers ?? '',
+      charity: member.override?.charity ?? '',
+      meetings: member.override?.meetings ?? ''
+    })
+    setShowEditDialog(true)
+  }
+
+  const handleSaveOverride = async () => {
+    if (!editingMember) return
+    setSaving(true)
+    try {
+      const res = await fetch('/api/admin/leaderboard/override', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          memberId: editingMember.id,
+          year: selectedYear,
+          kilometers: editFormData.kilometers,
+          charity: editFormData.charity,
+          meetings: editFormData.meetings
+        })
+      })
+      if (res.ok) {
+        toast.success('Leaderboard data saved!')
+        setShowEditDialog(false)
+        fetchLeaderboardData()
+      } else {
+        toast.error('Failed to save')
+      }
+    } catch (error) {
+      toast.error('Failed to save')
+    }
+    setSaving(false)
+  }
+
+  const handleRemoveOverride = async (memberId) => {
+    if (!confirm('Remove custom override for this member? Their stats will revert to calculated values.')) return
+    try {
+      const res = await fetch('/api/admin/leaderboard/override', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ memberId, year: selectedYear })
+      })
+      if (res.ok) {
+        toast.success('Override removed')
+        fetchLeaderboardData()
+      }
+    } catch (error) {
+      toast.error('Failed to remove override')
+    }
+  }
+
+  const getYearLabel = (year) => {
+    if (year === currentYear) return `${year} (This Year)`
+    if (year === currentYear - 1) return `${year} (Last Year)`
+    return year.toString()
+  }
+
+  // Sort members by kilometers for display
+  const sortedMembers = [...members].sort((a, b) => {
+    const aKm = a.override?.kilometers ?? a.calculatedKilometers
+    const bKm = b.override?.kilometers ?? b.calculatedKilometers
+    return bKm - aKm
+  })
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>
+            <Trophy className="inline-block text-yellow-500 mr-2" size={28} />
+            Top Riders Management
+          </h1>
+          <p className="text-gray-400">Edit and manage yearly leaderboard data for members</p>
+        </div>
+      </div>
+
+      {/* Year Selector */}
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-4">
+            <Label className="text-base font-medium">Select Year:</Label>
+            <Select value={selectedYear.toString()} onValueChange={(v) => setSelectedYear(parseInt(v))}>
+              <SelectTrigger className="w-[200px] bg-zinc-800 border-zinc-700">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-800 border-zinc-700">
+                {yearOptions.map(year => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {getYearLabel(year)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge className="bg-blue-600 ml-auto">
+              Showing data for {selectedYear}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Instructions */}
+      <Card className="bg-blue-900/20 border-blue-500/30">
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <Info className="text-blue-400 mt-0.5" size={20} />
+            <div className="text-sm text-blue-200">
+              <p className="font-medium mb-1">How it works:</p>
+              <ul className="list-disc list-inside space-y-1 text-blue-300">
+                <li><strong>Calculated values</strong> are automatically derived from approved attendance records</li>
+                <li><strong>Override values</strong> (shown in yellow) are manually set by admins and take priority</li>
+                <li>Click &quot;Edit&quot; to set custom values for any member for the selected year</li>
+                <li>Leave fields empty to use calculated values</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Members Table */}
+      <Card className="bg-zinc-900/50 border-zinc-800">
+        <CardHeader>
+          <CardTitle>Member Leaderboard Data - {selectedYear}</CardTitle>
+          <CardDescription>Click on a member to edit their leaderboard statistics for {selectedYear}</CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="p-12 text-center">
+              <Loader2 className="animate-spin mx-auto mb-2" size={32} />
+              <p className="text-gray-400">Loading member data...</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-zinc-800/50">
+                  <tr>
+                    <th className="text-left p-4 text-sm font-medium text-gray-400">Member</th>
+                    <th className="text-center p-4 text-sm font-medium text-gray-400">
+                      <div className="flex items-center justify-center gap-1">
+                        <TrendingUp size={14} />
+                        Kilometers
+                      </div>
+                    </th>
+                    <th className="text-center p-4 text-sm font-medium text-gray-400">
+                      <div className="flex items-center justify-center gap-1">
+                        <Trophy size={14} />
+                        Charity Events
+                      </div>
+                    </th>
+                    <th className="text-center p-4 text-sm font-medium text-gray-400">
+                      <div className="flex items-center justify-center gap-1">
+                        <Users size={14} />
+                        Meetings
+                      </div>
+                    </th>
+                    <th className="text-right p-4 text-sm font-medium text-gray-400">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-800">
+                  {sortedMembers.map((member, index) => {
+                    const hasOverride = member.override
+                    const kmValue = hasOverride?.kilometers ?? member.calculatedKilometers
+                    const charityValue = hasOverride?.charity ?? member.calculatedCharity
+                    const meetingsValue = hasOverride?.meetings ?? member.calculatedMeetings
+
+                    return (
+                      <tr key={member.id} className="hover:bg-zinc-800/30">
+                        <td className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 flex items-center justify-center text-gray-500 font-bold">
+                              {index + 1}
+                            </div>
+                            <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+                              {member.profilePicture ? (
+                                <img src={member.profilePicture} alt={member.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <User size={16} />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{member.name}</p>
+                              <p className="text-sm text-gray-500">{member.roadName && `"${member.roadName}"`}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full ${
+                            hasOverride?.kilometers !== undefined ? 'bg-yellow-600/20 text-yellow-400' : 'bg-zinc-800 text-gray-300'
+                          }`}>
+                            <span className="font-bold">{kmValue}</span>
+                            <span className="text-xs">KM</span>
+                            {hasOverride?.kilometers !== undefined && (
+                              <span className="text-xs ml-1">(custom)</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Calc: {member.calculatedKilometers} KM</p>
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full ${
+                            hasOverride?.charity !== undefined ? 'bg-yellow-600/20 text-yellow-400' : 'bg-zinc-800 text-gray-300'
+                          }`}>
+                            <span className="font-bold">{charityValue}</span>
+                            {hasOverride?.charity !== undefined && (
+                              <span className="text-xs ml-1">(custom)</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Calc: {member.calculatedCharity}</p>
+                        </td>
+                        <td className="p-4 text-center">
+                          <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full ${
+                            hasOverride?.meetings !== undefined ? 'bg-yellow-600/20 text-yellow-400' : 'bg-zinc-800 text-gray-300'
+                          }`}>
+                            <span className="font-bold">{meetingsValue}</span>
+                            {hasOverride?.meetings !== undefined && (
+                              <span className="text-xs ml-1">(custom)</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 mt-1">Calc: {member.calculatedMeetings}</p>
+                        </td>
+                        <td className="p-4 text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button size="sm" variant="outline" onClick={() => openEditDialog(member)}>
+                              <Edit size={14} className="mr-1" /> Edit
+                            </Button>
+                            {hasOverride && (
+                              <Button 
+                                size="sm" 
+                                variant="destructive" 
+                                onClick={() => handleRemoveOverride(member.id)}
+                              >
+                                <Trash2 size={14} />
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                  {members.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="p-12 text-center text-gray-500">
+                        No active members found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent className="bg-zinc-900 border-zinc-800 max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="text-yellow-500" size={20} />
+              Edit Leaderboard Data
+            </DialogTitle>
+          </DialogHeader>
+          {editingMember && (
+            <div className="space-y-6 py-4">
+              <div className="flex items-center gap-3 p-3 bg-zinc-800 rounded-lg">
+                <div className="w-12 h-12 rounded-full bg-red-600 flex items-center justify-center overflow-hidden">
+                  {editingMember.profilePicture ? (
+                    <img src={editingMember.profilePicture} alt={editingMember.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User size={24} />
+                  )}
+                </div>
+                <div>
+                  <p className="font-bold">{editingMember.name}</p>
+                  <p className="text-sm text-gray-400">{editingMember.roadName && `"${editingMember.roadName}"`}</p>
+                </div>
+                <Badge className="bg-blue-600 ml-auto">{selectedYear}</Badge>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <TrendingUp size={14} className="text-green-500" />
+                    Kilometers
+                  </Label>
+                  <Input
+                    type="number"
+                    value={editFormData.kilometers}
+                    onChange={(e) => setEditFormData({...editFormData, kilometers: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder={`Leave empty to use calculated: ${editingMember.calculatedKilometers}`}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Calculated from rides: {editingMember.calculatedKilometers} KM</p>
+                </div>
+
+                <div>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <Trophy size={14} className="text-pink-500" />
+                    Charity Events Attended
+                  </Label>
+                  <Input
+                    type="number"
+                    value={editFormData.charity}
+                    onChange={(e) => setEditFormData({...editFormData, charity: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder={`Leave empty to use calculated: ${editingMember.calculatedCharity}`}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Calculated from attendance: {editingMember.calculatedCharity}</p>
+                </div>
+
+                <div>
+                  <Label className="flex items-center gap-2 mb-2">
+                    <Users size={14} className="text-blue-500" />
+                    Meetings Attended
+                  </Label>
+                  <Input
+                    type="number"
+                    value={editFormData.meetings}
+                    onChange={(e) => setEditFormData({...editFormData, meetings: e.target.value})}
+                    className="bg-zinc-800 border-zinc-700"
+                    placeholder={`Leave empty to use calculated: ${editingMember.calculatedMeetings}`}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Calculated from attendance: {editingMember.calculatedMeetings}</p>
+                </div>
+              </div>
+
+              <div className="bg-yellow-900/20 border border-yellow-500/30 rounded-lg p-3">
+                <p className="text-sm text-yellow-300">
+                  <strong>Note:</strong> Custom values override calculated values. Leave fields empty to use auto-calculated stats.
+                </p>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveOverride} className="bg-red-600 hover:bg-red-700" disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
 // Applications Tab
 function ApplicationsTab({ token }) {
   const [applications, setApplications] = useState([])
