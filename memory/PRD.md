@@ -50,6 +50,11 @@ Full-featured motorcycle club management application for ILTMC - Intrepidus Leon
 - ✅ **Parallel API Calls** - All API calls now run in parallel for faster loading
 - ✅ **Clear Cache Feature** - Admin and Member portals have cache clearing options
 
+## Admin Panel Enhancements (March 14, 2026)
+- ✅ **Gallery Management** - Add/edit/delete gallery images with URLs and captions
+- ✅ **Footer Chapters** - Edit chapters displayed in footer (add/remove/reorder)
+- ✅ **Google Site Verification** - Added meta tag for webmaster verification
+
 ## Pages
 - `/` - Main landing page
 - `/admin` - Admin panel login & dashboard
