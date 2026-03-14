@@ -1051,7 +1051,6 @@ export default function App() {
       <Navbar content={content} />
       <HeroSection stats={stats} content={content} />
       <AboutSection content={content} />
-      <MembersSection members={members} ranks={ranks} positions={positions} />
       <RidesSection rides={rides} />
       <EventsSection events={events} />
       <JoinSection />
