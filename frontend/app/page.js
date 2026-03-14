@@ -1066,7 +1066,6 @@ export default function App() {
       <MembersSection members={members} ranks={ranks} positions={positions} />
       <RidesSection rides={rides} />
       <EventsSection events={events} />
-      <GallerySection content={content} />
       <JoinSection />
       <ContactSection content={content} />
       <Footer content={content} />
