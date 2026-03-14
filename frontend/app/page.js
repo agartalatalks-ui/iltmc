@@ -973,9 +973,12 @@ function Footer({ content }) {
           <div>
             <h4 className="font-bold mb-4" style={{ fontFamily: 'Oswald, sans-serif' }}>CHAPTERS</h4>
             <ul className="space-y-2 text-gray-400">
-              <li>Agartala (Main)</li>
-              <li>Dharmanagar</li>
-              <li>Udaipur</li>
+              {(footerContent.chapters && footerContent.chapters.length > 0 
+                ? footerContent.chapters 
+                : ['Agartala (Main)', 'Dharmanagar', 'Udaipur']
+              ).map((chapter, index) => (
+                <li key={index}>{chapter}</li>
+              ))}
             </ul>
           </div>
         </div>
