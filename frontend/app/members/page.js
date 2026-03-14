@@ -215,20 +215,28 @@ export default function MembersPage() {
         fetch('/api/ranks'),
         fetch('/api/positions')
       ])
-      setMembers(await membersRes.json())
-      setRanks(await ranksRes.json())
-      setPositions(await positionsRes.json())
+      
+      const membersData = await membersRes.json()
+      const ranksData = await ranksRes.json()
+      const positionsData = await positionsRes.json()
+      
+      // Only set if we got arrays back
+      if (Array.isArray(membersData)) setMembers(membersData)
+      if (Array.isArray(ranksData)) setRanks(ranksData)
+      if (Array.isArray(positionsData)) setPositions(positionsData)
     } catch (error) {
       console.error(error)
     }
     setLoading(false)
   }
 
-  const filteredMembers = filter === 'all' 
-    ? members 
-    : filter === 'online'
-      ? members.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000)
-      : members.filter(m => !m.lastSeen || (new Date() - new Date(m.lastSeen)) >= 300000)
+  const filteredMembers = Array.isArray(members) ? (
+    filter === 'all' 
+      ? members 
+      : filter === 'online'
+        ? members.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000)
+        : members.filter(m => !m.lastSeen || (new Date() - new Date(m.lastSeen)) >= 300000)
+  ) : []
 
   if (loading) {
     return (
