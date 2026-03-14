@@ -903,10 +903,70 @@ async function handleRoute(request, { params }) {
 
       const members = await db.collection('members')
         .find({ status: 'active' })
-        .project({ _id: 0, id: 1, name: 1, roadName: 1, rank: 1, profilePicture: 1 })
+        .project({ _id: 0, id: 1, name: 1, roadName: 1, rank: 1, profilePicture: 1, lastSeen: 1 })
         .toArray()
 
       return handleCORS(NextResponse.json(members))
+    }
+
+    // Member leaderboard - Top Riders
+    if (route === '/member/leaderboard' && method === 'GET') {
+      const user = await authenticateRequest(request)
+      if (!user || user.role !== 'member') {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      // Get all members
+      const members = await db.collection('members')
+        .find({ status: 'active' })
+        .project({ _id: 0, id: 1, name: 1, roadName: 1, rank: 1, profilePicture: 1, totalKilometers: 1 })
+        .toArray()
+
+      // Get approved self-attendance records for current year
+      const currentYear = new Date().getFullYear()
+      const startOfYear = new Date(currentYear, 0, 1)
+      const endOfYear = new Date(currentYear, 11, 31, 23, 59, 59)
+
+      const attendanceRecords = await db.collection('self_attendance')
+        .find({ 
+          status: 'approved',
+          date: { $gte: startOfYear, $lte: endOfYear }
+        })
+        .toArray()
+
+      // Calculate charity and meeting counts per member
+      const memberStats = {}
+      attendanceRecords.forEach(record => {
+        if (!memberStats[record.memberId]) {
+          memberStats[record.memberId] = { charity: 0, meetings: 0 }
+        }
+        if (record.type === 'charity') memberStats[record.memberId].charity++
+        if (record.type === 'club_meeting') memberStats[record.memberId].meetings++
+      })
+
+      // Build leaderboards
+      const kilometersLeaderboard = members
+        .map(m => ({ ...m, score: m.totalKilometers || 0 }))
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+
+      const charityLeaderboard = members
+        .map(m => ({ ...m, score: memberStats[m.id]?.charity || 0 }))
+        .filter(m => m.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+
+      const meetingsLeaderboard = members
+        .map(m => ({ ...m, score: memberStats[m.id]?.meetings || 0 }))
+        .filter(m => m.score > 0)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 10)
+
+      return handleCORS(NextResponse.json({
+        kilometers: kilometersLeaderboard,
+        charity: charityLeaderboard,
+        meetings: meetingsLeaderboard
+      }))
     }
 
     // Member chat - get messages with specific member
