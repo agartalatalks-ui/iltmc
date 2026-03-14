@@ -1816,6 +1816,7 @@ function ContentTab({ token }) {
     { id: 'hero', label: 'Hero Section', icon: Home },
     { id: 'about', label: 'About Section', icon: Info },
     { id: 'timeline', label: 'Timeline', icon: Clock },
+    { id: 'gallery', label: 'Gallery', icon: Image },
     { id: 'contact', label: 'Contact Info', icon: Phone },
     { id: 'social', label: 'Social Media', icon: Globe },
     { id: 'footer', label: 'Footer', icon: FileText }
