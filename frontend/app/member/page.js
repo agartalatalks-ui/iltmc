@@ -1380,19 +1380,28 @@ function ChatTab({ token, profile }) {
   )
 }
 
-// Top Riders Tab - Leaderboard
+// Top Riders Tab - Leaderboard with Year Selection
 function TopRidersTab({ token }) {
   const [leaderboard, setLeaderboard] = useState({ kilometers: [], charity: [], meetings: [] })
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState('kilometers')
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
+
+  // Generate year options (current year back to 2013 - club founding)
+  const currentYear = new Date().getFullYear()
+  const yearOptions = []
+  for (let year = currentYear; year >= 2013; year--) {
+    yearOptions.push(year)
+  }
 
   useEffect(() => {
     fetchLeaderboard()
-  }, [])
+  }, [selectedYear])
 
   const fetchLeaderboard = async () => {
+    setLoading(true)
     try {
-      const res = await fetch('/api/member/leaderboard', {
+      const res = await fetch(`/api/member/leaderboard?year=${selectedYear}`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (res.ok) {
@@ -1424,6 +1433,12 @@ function TopRidersTab({ token }) {
     return 'bg-zinc-800/50 border-zinc-700'
   }
 
+  const getYearLabel = (year) => {
+    if (year === currentYear) return `${year} (This Year)`
+    if (year === currentYear - 1) return `${year} (Last Year)`
+    return year.toString()
+  }
+
   const currentCategory = categories.find(c => c.id === activeCategory)
   const currentData = leaderboard[activeCategory] || []
 
@@ -1432,13 +1447,31 @@ function TopRidersTab({ token }) {
       <div className="text-center">
         <h1 className="text-3xl font-bold" style={{ fontFamily: 'Oswald, sans-serif' }}>
           <Trophy className="inline-block text-yellow-500 mr-2" size={32} />
-          TOP RIDERS <span className="text-red-500">2026</span>
+          TOP RIDERS <span className="text-red-500">{selectedYear}</span>
         </h1>
-        <p className="text-gray-400 mt-2">Celebrating our most active members this year</p>
+        <p className="text-gray-400 mt-2">Celebrating our most active members</p>
+      </div>
+
+      {/* Year Selector */}
+      <div className="flex justify-center">
+        <div className="inline-flex items-center gap-2 bg-zinc-900/80 border border-zinc-700 rounded-xl p-1">
+          <Calendar size={16} className="text-gray-400 ml-2" />
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+            className="bg-transparent border-none text-white font-medium py-2 pr-8 pl-2 focus:outline-none cursor-pointer"
+          >
+            {yearOptions.map(year => (
+              <option key={year} value={year} className="bg-zinc-900">
+                {getYearLabel(year)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Category Tabs */}
-      <div className="flex justify-center gap-3">
+      <div className="flex justify-center gap-3 flex-wrap">
         {categories.map((cat) => (
           <button
             key={cat.id}
@@ -1460,12 +1493,12 @@ function TopRidersTab({ token }) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <currentCategory.icon className={currentCategory.color} size={24} />
-            {currentCategory.label}
+            {currentCategory.label} - {selectedYear}
           </CardTitle>
           <CardDescription>
-            {activeCategory === 'kilometers' && 'Members ranked by total kilometers ridden'}
-            {activeCategory === 'charity' && 'Members ranked by charity events attended'}
-            {activeCategory === 'meetings' && 'Members ranked by club meetings attended'}
+            {activeCategory === 'kilometers' && `Members ranked by kilometers ridden in ${selectedYear}`}
+            {activeCategory === 'charity' && `Members ranked by charity events attended in ${selectedYear}`}
+            {activeCategory === 'meetings' && `Members ranked by club meetings attended in ${selectedYear}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1522,8 +1555,8 @@ function TopRidersTab({ token }) {
           ) : (
             <div className="text-center py-12 text-gray-500">
               <Trophy size={48} className="mx-auto mb-4 opacity-50" />
-              <p>No data available yet</p>
-              <p className="text-sm">Start participating in club activities!</p>
+              <p>No data available for {selectedYear}</p>
+              <p className="text-sm">Try selecting a different year or start participating in club activities!</p>
             </div>
           )}
         </CardContent>
