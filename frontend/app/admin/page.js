@@ -164,6 +164,7 @@ function Sidebar({ activeTab, setActiveTab, user, onLogout, collapsed, setCollap
     { id: 'chapters', label: 'Chapters', icon: Building },
     { id: 'rides', label: 'Rides', icon: Bike },
     { id: 'attendance', label: 'Attendance', icon: CheckCircle },
+    { id: 'topriders', label: 'Top Riders', icon: Trophy },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'applications', label: 'Applications', icon: FileText },
     { id: 'contacts', label: 'Messages', icon: Mail },
