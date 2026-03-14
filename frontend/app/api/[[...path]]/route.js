@@ -1345,6 +1345,135 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json({ message: `Attendance ${status}` }))
     }
 
+    // ==================== LEADERBOARD MANAGEMENT (Admin) ====================
+
+    // Admin get leaderboard data with overrides for a specific year
+    if (route === '/admin/leaderboard' && method === 'GET') {
+      const user = await authenticateRequest(request)
+      if (!user || !['admin', 'super_admin'].includes(user.role)) {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const url = new URL(request.url)
+      const yearParam = url.searchParams.get('year')
+      const selectedYear = yearParam ? parseInt(yearParam) : new Date().getFullYear()
+
+      // Get all members
+      const members = await db.collection('members')
+        .find({ status: 'active' })
+        .project({ _id: 0, id: 1, name: 1, roadName: 1, rank: 1, profilePicture: 1, totalKilometers: 1 })
+        .toArray()
+
+      // Get overrides for this year
+      const overrides = await db.collection('leaderboard_overrides')
+        .find({ year: selectedYear })
+        .toArray()
+      
+      const overridesMap = {}
+      overrides.forEach(o => {
+        const { _id, ...clean } = o
+        overridesMap[o.memberId] = clean
+      })
+
+      // Get attendance stats for the year
+      const startOfYear = new Date(selectedYear, 0, 1)
+      const endOfYear = new Date(selectedYear, 11, 31, 23, 59, 59)
+
+      const attendanceRecords = await db.collection('self_attendance')
+        .find({ 
+          status: 'approved',
+          date: { $gte: startOfYear, $lte: endOfYear }
+        })
+        .toArray()
+
+      const memberStats = {}
+      attendanceRecords.forEach(record => {
+        if (!memberStats[record.memberId]) {
+          memberStats[record.memberId] = { charity: 0, meetings: 0, yearlyKilometers: 0 }
+        }
+        if (record.type === 'charity') memberStats[record.memberId].charity++
+        if (record.type === 'club_meeting') memberStats[record.memberId].meetings++
+        if (record.type === 'ride' && record.kilometers) {
+          memberStats[record.memberId].yearlyKilometers += record.kilometers
+        }
+      })
+
+      // Build member list with stats and overrides
+      const memberData = members.map(m => ({
+        ...m,
+        calculatedKilometers: memberStats[m.id]?.yearlyKilometers || 0,
+        calculatedCharity: memberStats[m.id]?.charity || 0,
+        calculatedMeetings: memberStats[m.id]?.meetings || 0,
+        override: overridesMap[m.id] || null
+      }))
+
+      return handleCORS(NextResponse.json({
+        year: selectedYear,
+        members: memberData
+      }))
+    }
+
+    // Admin set/update leaderboard override for a member
+    if (route === '/admin/leaderboard/override' && method === 'POST') {
+      const user = await authenticateRequest(request)
+      if (!user || !['admin', 'super_admin'].includes(user.role)) {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { memberId, year, kilometers, charity, meetings } = await request.json()
+      
+      if (!memberId || !year) {
+        return handleCORS(NextResponse.json({ error: 'memberId and year are required' }, { status: 400 }))
+      }
+
+      const overrideData = {
+        memberId,
+        year: parseInt(year),
+        updatedBy: user.id,
+        updatedAt: new Date()
+      }
+
+      // Only set values that are provided (allow partial overrides)
+      if (kilometers !== undefined && kilometers !== null && kilometers !== '') {
+        overrideData.kilometers = parseInt(kilometers)
+      }
+      if (charity !== undefined && charity !== null && charity !== '') {
+        overrideData.charity = parseInt(charity)
+      }
+      if (meetings !== undefined && meetings !== null && meetings !== '') {
+        overrideData.meetings = parseInt(meetings)
+      }
+
+      await db.collection('leaderboard_overrides').updateOne(
+        { memberId, year: parseInt(year) },
+        { $set: overrideData },
+        { upsert: true }
+      )
+
+      return handleCORS(NextResponse.json({ message: 'Override saved successfully' }))
+    }
+
+    // Admin delete leaderboard override
+    if (route === '/admin/leaderboard/override' && method === 'DELETE') {
+      const user = await authenticateRequest(request)
+      if (!user || !['admin', 'super_admin'].includes(user.role)) {
+        return handleCORS(NextResponse.json({ error: 'Unauthorized' }, { status: 401 }))
+      }
+
+      const { memberId, year } = await request.json()
+      
+      if (!memberId || !year) {
+        return handleCORS(NextResponse.json({ error: 'memberId and year are required' }, { status: 400 }))
+      }
+
+      await db.collection('leaderboard_overrides').deleteOne({
+        memberId,
+        year: parseInt(year)
+      })
+
+      return handleCORS(NextResponse.json({ message: 'Override removed' }))
+    }
+
     // ==================== EVENTS CRUD ====================
     
     // Get all events (admin)
