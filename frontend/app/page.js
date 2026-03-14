@@ -586,57 +586,6 @@ function EventsSection({ events }) {
 }
 
 // Gallery Section
-function GallerySection({ content }) {
-  const defaultImages = [HERO_BG, ABOUT_IMG, RIDES_IMG, GALLERY_IMG, HERO_BG, ABOUT_IMG]
-  const galleryImages = content?.gallery?.length > 0 
-    ? content.gallery.map(img => ({ url: img.url, caption: img.caption }))
-    : defaultImages.map((url, i) => ({ url, caption: `ILTMC Ride ${i + 1}` }))
-
-  return (
-    <section id="gallery" className="py-24 bg-gradient-to-b from-zinc-950 to-black">
-      <div className="container mx-auto px-4">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <Badge variant="outline" className="mb-4 border-red-500 text-red-500">MOMENTS</Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Oswald, sans-serif' }}>
-            <span className="text-red-500">GALLERY</span>
-          </h2>
-          <p className="text-gray-400 max-w-2xl mx-auto">
-            Capturing memories from our rides and events
-          </p>
-        </motion.div>
-
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {galleryImages.map((img, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, scale: 0.8 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              className={`relative overflow-hidden rounded-xl ${index === 0 ? 'col-span-2 row-span-2' : ''}`}
-            >
-              <img
-                src={img.url}
-                alt={img.caption || `Gallery ${index + 1}`}
-                className="w-full h-full object-cover aspect-square hover:scale-110 transition-transform duration-500"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                <p className="text-white font-medium">{img.caption || `ILTMC Ride ${index + 1}`}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
 // Join Section
 function JoinSection() {
   const [formData, setFormData] = useState({
