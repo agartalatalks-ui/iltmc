@@ -439,10 +439,16 @@ function MembersSection({ members, ranks, positions }) {
 
 // Rides Section
 function RidesSection({ rides }) {
+  const defaultThumbnails = [
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
+    'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?w=400',
+    'https://images.unsplash.com/photo-1609630875171-b1321377ee65?w=400'
+  ]
+  
   const displayRides = rides?.length > 0 ? rides : [
-    { id: '1', title: 'Northeast Expedition', description: 'Epic ride through the seven sisters', date: new Date('2025-07-15'), distance: 850, difficulty: 'Hard', startPoint: 'Agartala', endPoint: 'Shillong', captain: 'Thunder' },
-    { id: '2', title: 'Tripura Heritage Ride', description: 'Exploring ancient temples and palaces', date: new Date('2025-06-20'), distance: 280, difficulty: 'Medium', startPoint: 'Agartala', endPoint: 'Udaipur', captain: 'Storm' },
-    { id: '3', title: 'Dawn Patrol', description: 'Weekly sunrise ride', date: new Date('2025-06-08'), distance: 120, difficulty: 'Easy', startPoint: 'Agartala', endPoint: 'Ambassa', captain: 'Rider' },
+    { id: '1', title: 'Northeast Expedition', description: 'Epic ride through the seven sisters', date: new Date('2025-07-15'), distance: 850, difficulty: 'Hard', startPoint: 'Agartala', endPoint: 'Shillong', captain: 'Thunder', thumbnail: defaultThumbnails[0] },
+    { id: '2', title: 'Tripura Heritage Ride', description: 'Exploring ancient temples and palaces', date: new Date('2025-06-20'), distance: 280, difficulty: 'Medium', startPoint: 'Agartala', endPoint: 'Udaipur', captain: 'Storm', thumbnail: defaultThumbnails[1] },
+    { id: '3', title: 'Dawn Patrol', description: 'Weekly sunrise ride', date: new Date('2025-06-08'), distance: 120, difficulty: 'Easy', startPoint: 'Agartala', endPoint: 'Ambassa', captain: 'Rider', thumbnail: defaultThumbnails[2] },
   ]
 
   return (
@@ -476,35 +482,46 @@ function RidesSection({ rides }) {
               viewport={{ once: true }}
               transition={{ delay: index * 0.1 }}
             >
-              <Card className="bg-zinc-900/80 border-zinc-800 hover:border-red-500/50 transition-all duration-300 h-full">
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-2">
+              <Card className="bg-zinc-900/80 border-zinc-800 hover:border-red-500/50 transition-all duration-300 h-full overflow-hidden group">
+                {/* Thumbnail */}
+                <div className="relative h-48 overflow-hidden">
+                  <img 
+                    src={ride.thumbnail || defaultThumbnails[index % 3]} 
+                    alt={ride.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-zinc-900 to-transparent"></div>
+                  <div className="absolute top-3 left-3">
                     <Badge className={
                       ride.difficulty === 'Hard' ? 'bg-red-600' : 
                       ride.difficulty === 'Medium' ? 'bg-yellow-600' : 'bg-green-600'
                     }>
                       {ride.difficulty}
                     </Badge>
-                    <span className="text-red-500 font-bold">{ride.distance} KM</span>
                   </div>
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-black/60 text-white">{ride.distance} KM</Badge>
+                  </div>
+                </div>
+                <CardHeader className="pb-2">
                   <CardTitle className="text-xl" style={{ fontFamily: 'Oswald, sans-serif' }}>
                     {ride.title}
                   </CardTitle>
                   <CardDescription>{ride.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-2">
                     <div className="flex items-center gap-2 text-sm">
-                      <Calendar size={16} className="text-red-500" />
-                      <span>{new Date(ride.date).toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                      <Calendar size={14} className="text-red-500" />
+                      <span>{new Date(ride.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <MapPin size={16} className="text-red-500" />
+                      <MapPin size={14} className="text-red-500" />
                       <span>{ride.startPoint} → {ride.endPoint}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
-                      <Users size={16} className="text-red-500" />
-                      <span>Road Captain: {ride.captain}</span>
+                      <Users size={14} className="text-red-500" />
+                      <span>Captain: {ride.captain}</span>
                     </div>
                   </div>
                   <Button className="w-full mt-4 bg-red-600 hover:bg-red-700">
