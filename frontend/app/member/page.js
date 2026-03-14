@@ -7,7 +7,8 @@ import {
   LogOut, Upload, FileSpreadsheet, CheckCircle, XCircle, Clock,
   TrendingUp, Eye, EyeOff, RefreshCw, Home, Settings, BarChart3,
   MessageCircle, Send, Users, Camera, ExternalLink, Edit3,
-  Heart, Flag, Gauge, Image as ImageIcon, Loader2, Trash2, HardDrive
+  Heart, Flag, Gauge, Image as ImageIcon, Loader2, Trash2, HardDrive,
+  Circle, Trophy, Smile, Medal, Crown, Star
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
