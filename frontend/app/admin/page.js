@@ -1743,7 +1743,8 @@ function ContentTab({ token }) {
     timeline: [],
     contact: { badge: '', title: '', address: '', email: '', phone: '', whatsapp: '' },
     social: { facebook: '', instagram: '', youtube: '' },
-    footer: { description: '', copyright: '' }
+    footer: { description: '', copyright: '', chapters: ['Agartala (Main)', 'Dharmanagar', 'Udaipur'] },
+    gallery: []
   })
   const [loading, setLoading] = useState(true)
   const [activeSection, setActiveSection] = useState('branding')
