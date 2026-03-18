@@ -26,7 +26,16 @@ function Navbar({ content }) {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
+    let ticking = false
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 50)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -80,7 +89,7 @@ function Navbar({ content }) {
           </div>
 
           {/* Mobile Menu Button */}
-          <button className="lg:hidden p-2" onClick={() => setIsOpen(!isOpen)}>
+          <button className="lg:hidden p-3" onClick={() => setIsOpen(!isOpen)}>
             {isOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
@@ -127,7 +136,7 @@ function HeroSection({ stats, content }) {
     <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background */}
       <div className="absolute inset-0">
-        <img src={heroContent.backgroundImage || HERO_BG} alt="" className="w-full h-full object-cover" />
+        <img src={heroContent.backgroundImage || HERO_BG} alt="" role="presentation" className="w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black" />
         <div className="absolute inset-0 bg-gradient-to-r from-red-900/30 via-transparent to-red-900/30" />
       </div>
@@ -258,9 +267,9 @@ function AboutSection({ content }) {
         >
           <Badge variant="outline" className="mb-4 border-red-500 text-red-500">{aboutContent.badge || 'OUR STORY'}</Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Oswald, sans-serif' }}>
-            {aboutContent.title ? aboutContent.title.split(' ').map((word, i) => 
-              i === 1 ? <span key={i} className="text-red-500">{word} </span> : word + ' '
-            ) : <>ABOUT <span className="text-red-500">ILTMC</span></>}
+            {aboutContent.title ? <>
+              {aboutContent.title.split(' ')[0]} <span className="text-red-500">{aboutContent.title.split(' ').slice(1).join(' ')}</span>
+            </> : <>ABOUT <span className="text-red-500">ILTMC</span></>}
           </h2>
           <p className="text-gray-400 max-w-2xl mx-auto">
             {aboutContent.subtitle || 'A brotherhood forged on the open road, united by the love of motorcycles and the spirit of adventure.'}
@@ -299,7 +308,7 @@ function AboutSection({ content }) {
               {aboutContent.description2 || 'Our name, derived from Latin, means "Fearless Lions" - embodying the courage, strength, and pride that defines every member of our club. We ride together, stand together, and grow together.'}
             </p>
 
-            <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
               {[
                 { icon: Shield, label: values[0] || 'Brotherhood' },
                 { icon: Bike, label: values[1] || 'Freedom' },
@@ -358,7 +367,7 @@ function RidesSection({ rides }) {
   return (
     <section id="rides" className="py-24 bg-gradient-to-b from-black via-zinc-950 to-black relative overflow-hidden">
       <div className="absolute inset-0 opacity-10">
-        <img src={RIDES_IMG} alt="" className="w-full h-full object-cover" />
+        <img src={RIDES_IMG} alt="" role="presentation" className="w-full h-full object-cover" />
       </div>
       
       <div className="relative container mx-auto px-4">
@@ -473,7 +482,7 @@ function EventsSection({ events }) {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {displayEvents.map((event, index) => (
             <motion.div
               key={event.id}
@@ -701,9 +710,9 @@ function ContactSection({ content }) {
         >
           <Badge variant="outline" className="mb-4 border-red-500 text-red-500">{contactInfo.badge || 'GET IN TOUCH'}</Badge>
           <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Oswald, sans-serif' }}>
-            {contactInfo.title ? contactInfo.title.split(' ').map((word, i) => 
-              i === 1 ? <span key={i} className="text-red-500">{word} </span> : word + ' '
-            ) : <>CONTACT <span className="text-red-500">US</span></>}
+            {contactInfo.title ? <>
+              {contactInfo.title.split(' ')[0]} <span className="text-red-500">{contactInfo.title.split(' ').slice(1).join(' ')}</span>
+            </> : <>CONTACT <span className="text-red-500">US</span></>}
           </h2>
         </motion.div>
 
@@ -754,37 +763,53 @@ function ContactSection({ content }) {
               <CardContent className="p-8">
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="contactName" className="block text-sm font-medium text-gray-300 mb-1">Your Name</label>
+                      <Input
+                        id="contactName"
+                        placeholder="Your Name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        required
+                        className="bg-zinc-800 border-zinc-700"
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-300 mb-1">Your Email</label>
+                      <Input
+                        id="contactEmail"
+                        type="email"
+                        placeholder="Your Email"
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        required
+                        className="bg-zinc-800 border-zinc-700"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label htmlFor="contactSubject" className="block text-sm font-medium text-gray-300 mb-1">Subject</label>
                     <Input
-                      placeholder="Your Name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      required
-                      className="bg-zinc-800 border-zinc-700"
-                    />
-                    <Input
-                      type="email"
-                      placeholder="Your Email"
-                      value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      id="contactSubject"
+                      placeholder="Subject"
+                      value={formData.subject}
+                      onChange={(e) => setFormData({...formData, subject: e.target.value})}
                       required
                       className="bg-zinc-800 border-zinc-700"
                     />
                   </div>
-                  <Input
-                    placeholder="Subject"
-                    value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
-                    required
-                    className="bg-zinc-800 border-zinc-700"
-                  />
-                  <Textarea
-                    placeholder="Your Message"
-                    value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
-                    required
-                    rows={5}
-                    className="bg-zinc-800 border-zinc-700"
-                  />
+                  <div>
+                    <label htmlFor="contactMessage" className="block text-sm font-medium text-gray-300 mb-1">Your Message</label>
+                    <Textarea
+                      id="contactMessage"
+                      placeholder="Your Message"
+                      value={formData.message}
+                      onChange={(e) => setFormData({...formData, message: e.target.value})}
+                      required
+                      rows={5}
+                      className="bg-zinc-800 border-zinc-700"
+                    />
+                  </div>
                   <Button type="submit" className="w-full bg-red-600 hover:bg-red-700" disabled={loading}>
                     {loading ? 'Sending...' : 'SEND MESSAGE'} <Send className="ml-2" size={16} />
                   </Button>

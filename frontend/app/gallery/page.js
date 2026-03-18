@@ -21,7 +21,7 @@ const DEFAULT_IMAGES = [
 ]
 
 // Lightbox Component
-function Lightbox({ images, currentIndex, onClose, onNext, onPrev }) {
+function Lightbox({ images, currentIndex, onClose, onNext, onPrev, onSelectImage }) {
   const currentImage = images[currentIndex]
 
   useEffect(() => {
@@ -72,7 +72,7 @@ function Lightbox({ images, currentIndex, onClose, onNext, onPrev }) {
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
           transition={{ duration: 0.3 }}
-          className="max-w-5xl max-h-[85vh] mx-4"
+          className="w-[95vw] max-w-5xl max-h-[85vh] mx-auto"
           onClick={(e) => e.stopPropagation()}
         >
           <img
@@ -91,12 +91,12 @@ function Lightbox({ images, currentIndex, onClose, onNext, onPrev }) {
           {images.map((img, idx) => (
             <button
               key={idx}
-              onClick={(e) => { e.stopPropagation(); onClose(); setTimeout(() => document.querySelector(`[data-gallery-index="${idx}"]`)?.click(), 100) }}
+              onClick={(e) => { e.stopPropagation(); onSelectImage(idx) }}
               className={`w-16 h-16 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
                 idx === currentIndex ? 'border-red-500 scale-110' : 'border-transparent opacity-60 hover:opacity-100'
               }`}
             >
-              <img src={img.url} alt="" className="w-full h-full object-cover" />
+              <img src={img.url} alt={img.caption || img.title || img.alt || 'Gallery photo'} className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
@@ -110,7 +110,16 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
+    let ticking = false
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 50)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -154,6 +163,7 @@ export default function GalleryPage() {
   const fetchGallery = async () => {
     try {
       const res = await fetch('/api/content')
+      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
       const data = await res.json()
       if (data?.gallery && data.gallery.length > 0) {
         setImages(data.gallery)
@@ -162,6 +172,7 @@ export default function GalleryPage() {
       }
     } catch (error) {
       setImages(DEFAULT_IMAGES)
+      console.warn('Gallery failed to load from API, showing defaults')
     }
     setLoading(false)
   }
@@ -301,6 +312,7 @@ export default function GalleryPage() {
           onClose={closeLightbox}
           onNext={nextImage}
           onPrev={prevImage}
+          onSelectImage={setCurrentIndex}
         />
       )}
     </div>

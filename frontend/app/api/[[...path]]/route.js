@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken'
 let client
 let db
 
-const JWT_SECRET = process.env.JWT_SECRET || 'iltmc-super-secret-key-2013'
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET env var is required in production') })() : 'dev-only-insecure-fallback')
 
 // Captcha store (in-memory, with expiration)
 const captchaStore = new Map()
@@ -111,18 +111,20 @@ export async function OPTIONS() {
 
 // Initialize default data
 async function initializeDefaults(db) {
-  // Check if admin exists
-  const adminExists = await db.collection('users').findOne({ email: 'admin@iltmc.com' })
-  if (!adminExists) {
-    const hashedPassword = await bcrypt.hash('admin123', 12)
-    await db.collection('users').insertOne({
-      id: uuidv4(),
-      email: 'admin@iltmc.com',
-      password: hashedPassword,
-      name: 'Super Admin',
-      role: 'super_admin',
-      createdAt: new Date()
-    })
+  if (process.env.NODE_ENV !== 'production') {
+    // Check if admin exists
+    const adminExists = await db.collection('users').findOne({ email: 'admin@iltmc.com' })
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('admin123', 12)
+      await db.collection('users').insertOne({
+        id: uuidv4(),
+        email: 'admin@iltmc.com',
+        password: hashedPassword,
+        name: 'Super Admin',
+        role: 'super_admin',
+        createdAt: new Date()
+      })
+    }
   }
 
   // Initialize default ranks (achievement levels) - ILTMC Custom Ranks
@@ -302,9 +304,10 @@ async function handleRoute(request, { params }) {
     // Submit join application
     if (route === '/applications' && method === 'POST') {
       const body = await request.json()
+      const { name, email, phone, bike, experience, reason } = body
       const application = {
         id: uuidv4(),
-        ...body,
+        name, email, phone, bike, experience, reason,
         status: 'pending',
         createdAt: new Date()
       }

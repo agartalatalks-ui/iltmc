@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcryptjs'
 
-const JWT_SECRET = process.env.JWT_SECRET || 'iltmc-super-secret-key-2013'
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? (() => { throw new Error('JWT_SECRET env var is required in production') })() : 'dev-only-insecure-fallback')
 
 export function generateToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })

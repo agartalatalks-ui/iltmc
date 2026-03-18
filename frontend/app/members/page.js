@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowLeft, User, Bike, MapPin, Award, Shield, Phone, Mail, Clock, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -14,7 +14,16 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50)
+    let ticking = false
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 50)
+          ticking = false
+        })
+        ticking = true
+      }
+    }
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
@@ -176,7 +185,10 @@ function MemberCard({ member, ranks, positions }) {
 // Online Members Counter
 function OnlineCounter({ members }) {
   const memberArray = Array.isArray(members) ? members : []
-  const onlineCount = memberArray.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000).length
+  const onlineCount = useMemo(() =>
+    memberArray.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000).length,
+    [memberArray]
+  )
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 bg-zinc-900/50 rounded-full border border-zinc-800">
@@ -203,41 +215,51 @@ export default function MembersPage() {
   const [filter, setFilter] = useState('all')
 
   useEffect(() => {
-    fetchData()
+    const controller = new AbortController()
+
+    const loadData = async () => {
+      try {
+        const [membersRes, ranksRes, positionsRes] = await Promise.all([
+          fetch('/api/members/public', { signal: controller.signal }),
+          fetch('/api/ranks', { signal: controller.signal }),
+          fetch('/api/positions', { signal: controller.signal })
+        ])
+
+        if (!membersRes.ok) throw new Error(`API error: ${membersRes.status}`)
+        if (!ranksRes.ok) throw new Error(`API error: ${ranksRes.status}`)
+        if (!positionsRes.ok) throw new Error(`API error: ${positionsRes.status}`)
+
+        const membersData = await membersRes.json()
+        const ranksData = await ranksRes.json()
+        const positionsData = await positionsRes.json()
+
+        // Only set if we got arrays back
+        if (Array.isArray(membersData)) setMembers(membersData)
+        if (Array.isArray(ranksData)) setRanks(ranksData)
+        if (Array.isArray(positionsData)) setPositions(positionsData)
+      } catch (error) {
+        if (error.name === 'AbortError') return
+        console.warn('Members fetch failed:', error.message)
+      }
+      setLoading(false)
+    }
+
+    loadData()
     // Refresh online status every 30 seconds
-    const interval = setInterval(fetchData, 30000)
-    return () => clearInterval(interval)
+    const interval = setInterval(loadData, 30000)
+    return () => {
+      controller.abort()
+      clearInterval(interval)
+    }
   }, [])
 
-  const fetchData = async () => {
-    try {
-      const [membersRes, ranksRes, positionsRes] = await Promise.all([
-        fetch('/api/members/public'),
-        fetch('/api/ranks'),
-        fetch('/api/positions')
-      ])
-      
-      const membersData = await membersRes.json()
-      const ranksData = await ranksRes.json()
-      const positionsData = await positionsRes.json()
-      
-      // Only set if we got arrays back
-      if (Array.isArray(membersData)) setMembers(membersData)
-      if (Array.isArray(ranksData)) setRanks(ranksData)
-      if (Array.isArray(positionsData)) setPositions(positionsData)
-    } catch (error) {
-      console.error(error)
-    }
-    setLoading(false)
-  }
-
-  const filteredMembers = Array.isArray(members) ? (
-    filter === 'all' 
-      ? members 
+  const filteredMembers = useMemo(() => Array.isArray(members) ? (
+    filter === 'all'
+      ? members
       : filter === 'online'
         ? members.filter(m => m.lastSeen && (new Date() - new Date(m.lastSeen)) < 300000)
         : members.filter(m => !m.lastSeen || (new Date() - new Date(m.lastSeen)) >= 300000)
-  ) : []
+  ) : [], [members, filter])
 
   if (loading) {
     return (
@@ -311,7 +333,7 @@ export default function MembersPage() {
       <section className="pb-24">
         <div className="container mx-auto px-4">
           {filteredMembers.length > 0 ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredMembers.map((member, index) => (
                 <MemberCard 
                   key={member.id} 

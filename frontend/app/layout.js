@@ -1,5 +1,7 @@
 import './globals.css'
 import { Toaster } from '@/components/ui/sonner'
+import { Oswald } from 'next/font/google'
+const oswald = Oswald({ subsets: ['latin'], variable: '--font-oswald', display: 'swap' })
 
 export const metadata = {
   title: 'ILTMC - Intrepidus Leones Tripura Motorcycle Club',
@@ -14,12 +16,9 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${oswald.variable}`}>
       <head>
         <meta name="google-site-verification" content="WXPUxDpIv-zwhbwYK5P9uN6tGfdgF70MVjmeYx2O6-A" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased">
         {children}
